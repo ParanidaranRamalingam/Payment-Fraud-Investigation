@@ -70,7 +70,7 @@ public class SecurityConfiguration {
         return http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
-                        .requestMatchers("/error", "/css/**", "/favicon.ico", "/favicon.svg").permitAll()
+                        .requestMatchers("/error", "/css/**", "/js/**", "/favicon.ico", "/favicon.svg").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/cases/*/reviews").hasRole(reviewer)
                         .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole(analyst, reviewer)
                         .requestMatchers("/api/**").hasRole(analyst)

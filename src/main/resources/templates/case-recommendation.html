@@ -31,7 +31,8 @@
                 <th:block th:replace="~{fragments/components :: emptyState('&#128161;', 'No recommendation yet',
                     'Run the bounded investigation to collect evidence and produce a validated advisory recommendation.')}"/>
                 <form th:if="${canInvestigate}" th:action="@{/ui/cases/{id}/investigate(id=${c.caseId})}" method="post" style="text-align:center">
-                    <button class="btn btn--primary" type="submit">Run investigation</button>
+                    <button class="btn btn--primary" type="submit" data-loading
+                            data-loading-label="Investigating…">Run investigation</button>
                 </form>
             </div>
 

@@ -59,7 +59,8 @@
     </div>
     <div class="case-strip__actions">
         <form th:if="${canInvestigate}" th:action="@{/ui/cases/{id}/investigate(id=${c.caseId})}" method="post">
-            <button class="btn btn--primary" type="submit">Run investigation</button>
+            <button class="btn btn--primary" type="submit" data-loading
+                    data-loading-label="Investigating…">Run investigation</button>
         </form>
         <a class="btn btn--secondary" th:if="${canReview}" th:href="@{/ui/cases/{id}/review(id=${c.caseId})}">Open review</a>
     </div>
@@ -129,7 +130,8 @@
                       placeholder="e.g. What is the recommendation and which evidence supports it?"></textarea>
             <span class="hint">Advisory only. The assistant cannot take actions or access other cases.</span>
         </div>
-        <button class="btn btn--secondary" type="submit">Send message</button>
+        <button class="btn btn--secondary" type="submit" data-loading
+                data-loading-label="Sending…">Send message</button>
     </form>
     <p class="text-muted text-small" th:if="${c.status().isTerminal()}">This case is closed; the conversation is read-only.</p>
 </section>
