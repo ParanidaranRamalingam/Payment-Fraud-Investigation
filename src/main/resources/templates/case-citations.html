@@ -59,10 +59,8 @@
                         <td th:text="${cit.section()}">section</td>
                         <td>
                             <span class="similarity">
-                                <span class="similarity__track" aria-hidden="true">
-                                    <span class="similarity__fill"
-                                          th:style="${'width: ' + (cit.relevanceScore() * 100) + '%;display:block;height:100%'}"></span>
-                                </span>
+                                <meter class="confidence__meter" style="width:64px" min="0" max="1"
+                                       th:value="${cit.relevanceScore()}" aria-label="Similarity score"></meter>
                                 <span th:text="${@uiFormat.similarity(cit.relevanceScore())}">0.00</span>
                             </span>
                         </td>
@@ -73,7 +71,7 @@
                                 <div class="timeline__meta mt-2">
                                     chunk <span th:text="${cit.chunkId()}">id</span> · owner
                                     <span th:text="${cit.owner()}">owner</span>
-                                    <span th:replace="~{fragments/components :: provenance(T(com.capstone.fraudcase.domain.ProvenanceType).POLICY_PASSAGE)}"></span>
+                                    <span th:replace="~{fragments/components :: provenanceKey('policy')}"></span>
                                 </div>
                             </details>
                         </td>

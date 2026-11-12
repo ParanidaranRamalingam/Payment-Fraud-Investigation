@@ -37,7 +37,7 @@
                     <section class="card" aria-labelledby="rev-rec-title">
                         <h2 class="card__title" id="rev-rec-title">Advisory recommendation</h2>
                         <p class="text-small">
-                            <span th:replace="~{fragments/components :: provenance(${recommendation != null and recommendation.recommendation().processorMode().name() == 'AI' ? T(com.capstone.fraudcase.domain.ProvenanceType).MODEL_INTERPRETATION : T(com.capstone.fraudcase.domain.ProvenanceType).RULE_ENGINE)})"></span>
+                            <span th:replace="~{fragments/components :: provenanceKey(${recommendation != null and recommendation.recommendation().processorMode().name() == 'AI' ? 'generated-model' : 'generated-rules'})}"></span>
                             Advisory only — it never decides the case.</p>
                         <dl class="review-summary" th:if="${recommendation != null}"
                             th:with="rec=${recommendation.recommendation()}">
@@ -74,13 +74,12 @@
                     <section class="card" aria-labelledby="rev-form-title">
                         <h2 class="card__title" id="rev-form-title">Record disposition</h2>
 
-                        <div class="alert alert--danger" th:if="${#fields.hasGlobalErrors()}" role="alert">
-                            <span class="alert__icon" aria-hidden="true">!</span>
-                            <span th:each="err : ${#fields.globalErrors()}" th:text="${err}">error</span>
-                        </div>
-
                         <form th:if="${canReview and reviewer}" th:action="@{/ui/cases/{id}/reviews(id=${c.caseId})}"
                               th:object="${form}" method="post">
+                            <div class="alert alert--danger" th:if="${#fields.hasGlobalErrors()}" role="alert">
+                                <span class="alert__icon" aria-hidden="true">!</span>
+                                <span th:each="err : ${#fields.globalErrors()}" th:text="${err}">error</span>
+                            </div>
                             <input type="hidden" th:field="*{recommendationId}">
 
                             <fieldset style="border:none;padding:0;margin:0 0 8px">

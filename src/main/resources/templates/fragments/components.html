@@ -22,6 +22,15 @@
           th:text="${@uiFormat.provenanceLabel(value)}">Source</span>
 </th:block>
 
+<!-- String-keyed provenance tag for places where enum constants cannot be referenced. -->
+<th:block th:fragment="provenanceKey(key)">
+    <span class="provenance-tag" th:classappend="${'provenance-tag--' + (
+        key == 'claim' ? 'claim' : key == 'observed' ? 'observed' :
+        key == 'policy' ? 'policy' : key == 'review' ? 'review' :
+        key == 'analyst' ? 'claim' : 'generated')}"
+          th:text="${@uiFormat.provenanceLabelKey(key)}">Source</span>
+</th:block>
+
 <!-- Case summary strip shown on every case page. -->
 <div class="case-strip" th:fragment="caseStrip">
     <div class="case-strip__item">
@@ -88,10 +97,8 @@
         <span>Confidence</span>
         <span class="confidence__value" th:text="${@uiFormat.pct(value)}">—</span>
     </div>
-    <div class="confidence__track" role="progressbar"
-         th:attr="aria-valuenow=${@uiFormat.pctValue(value)},aria-valuemin=0,aria-valuemax=100,aria-label='Recommendation confidence'">
-        <div class="confidence__fill" th:style="${'width: ' + @uiFormat.pctValue(value) + '%'}"></div>
-    </div>
+    <meter class="confidence__meter" min="0" max="100" aria-label="Recommendation confidence"
+           th:value="${@uiFormat.pctValue(value)}" th:text="${@uiFormat.pct(value)}">0%</meter>
 </div>
 
 <!-- Conversation thread (bounded case memory). -->
@@ -103,12 +110,12 @@
 
     <div th:if="${#lists.isEmpty(messages)}">
         <th:block th:replace="~{fragments/components :: emptyState('&#128172;', 'No messages yet',
-            'Ask about this case\'s status, evidence, recommendation or policy citations. Replies are advisory and validated before being recorded.')}"/>
+            'Ask about the status, evidence, recommendation or policy citations of this case. Replies are advisory and validated before being recorded.')}"/>
     </div>
     <div th:each="m : ${messages}" class="message"
          th:classappend="${m.role().name() == 'ANALYST'} ? 'message--analyst' : 'message--assistant'">
         <div class="message__meta">
-            <span th:replace="~{fragments/components :: provenance(${m.role().name() == 'ANALYST' ? T(com.capstone.fraudcase.domain.ProvenanceType).ANALYST_NOTE : (m.processorMode() != null and m.processorMode().name() == 'AI' ? T(com.capstone.fraudcase.domain.ProvenanceType).MODEL_INTERPRETATION : T(com.capstone.fraudcase.domain.ProvenanceType).RULE_ENGINE)})}"></span>
+            <span th:replace="~{fragments/components :: provenanceKey(${m.role().name() == 'ANALYST' ? 'analyst' : (m.processorMode() != null and m.processorMode().name() == 'AI' ? 'generated-model' : 'generated-rules')})}"></span>
             <span th:text="${m.authorId()}">author</span>
             <span th:text="${@uiFormat.ts(m.createdAt())}">time</span>
         </div>
@@ -136,7 +143,7 @@
     </div>
     <ol class="timeline" th:if="${!#lists.isEmpty(audit)}">
         <li class="timeline__item" th:each="e : ${audit}"
-            th:classappend="${e.eventType.name() == 'RECOMMENDATION_REJECTED'} ? 'timeline__item--danger' : (e.eventType.name() == 'REVIEW_SUBMITTED' ? 'timeline__item--ok' : 'timeline__item--info')">
+            th:classappend="${@uiFormat.timelineTone(e.eventType)}">
             <span class="timeline__marker" aria-hidden="true" th:text="${e.eventType.name().substring(0,1)}">E</span>
             <div class="timeline__body">
                 <div class="timeline__title">

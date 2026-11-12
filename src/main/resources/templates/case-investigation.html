@@ -29,7 +29,7 @@
                             <dt>Claim type</dt>
                             <dd>
                                 <span th:text="${@uiFormat.label(c.claim.claimType())}">Type</span>
-                                <span th:replace="~{fragments/components :: provenance(T(com.capstone.fraudcase.domain.ProvenanceType).CUSTOMER_STATEMENT)}"></span>
+                                <span th:replace="~{fragments/components :: provenanceKey('claim')}"></span>
                             </dd>
                             <dt>Merchant</dt>
                             <dd th:text="${c.claim.merchantName()}">merchant</dd>
@@ -59,9 +59,7 @@
 
                         <ol class="timeline" th:if="${!traces.isEmpty()}">
                             <li class="timeline__item" th:each="t : ${traces}"
-                                th:classappend="${t.status().name() == 'SUCCESS'} ? 'timeline__item--ok' :
-                                    (t.status().name() == 'NOT_FOUND' or t.status().name() == 'TIMEOUT') ? 'timeline__item--warn' :
-                                    (t.status().name() == 'SUCCESS' ? '' : 'timeline__item--danger')">
+                                th:classappend="${@uiFormat.timelineTone(t.status())}">
                                 <span class="timeline__marker" aria-hidden="true">&#9881;</span>
                                 <div class="timeline__body">
                                     <div class="timeline__title">
@@ -95,14 +93,14 @@
                     <section class="card" aria-labelledby="checklist-title">
                         <h2 class="card__title" id="checklist-title">Plan progress</h2>
                         <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px">
-                            <li th:each="tool : ${planTools}" style="display:flex;gap:8px;align-items:center;font-size:.88rem">
-                                <span aria-hidden="true"
-                                      th:text="${latestTraceByTool[tool] != null} ? '✓' : '○'">○</span>
+                            <li th:each="tool : ${planTools}" style="display:flex;gap:8px;align-items:center;font-size:.88rem"
+                                th:with="tr=${latestTraceByTool.get(tool)}">
+                                <span aria-hidden="true" th:text="${tr != null} ? '✓' : '○'">○</span>
                                 <span th:text="${tool.toolId()}">tool</span>
-                                <span th:if="${latestTraceByTool[tool] != null}">
-                                    <th:block th:replace="~{fragments/components :: badge(${latestTraceByTool[tool].status()})}"/>
+                                <span th:if="${tr != null}">
+                                    <th:block th:replace="~{fragments/components :: badge(${tr.status()})}"/>
                                 </span>
-                                <span class="text-muted" th:if="${latestTraceByTool[tool] == null}">pending</span>
+                                <span class="text-muted" th:if="${tr == null}">pending</span>
                             </li>
                         </ul>
                     </section>
@@ -116,9 +114,9 @@
                         <ul style="margin:0;padding-left:18px;font-size:.86rem" th:if="${!unavailableEvidence.isEmpty()}">
                             <li th:each="e : ${unavailableEvidence}" th:text="${(e.tool() != null ? e.tool().toolId() : 'evidence') + ' — ' + @uiFormat.label(e.status())}">gap</li>
                         </ul>
-                        <ul style="margin:0;padding-left:18px;font-size:.86rem" th:if="${recommendation != null}"
-                            th:each="m : ${recommendation.recommendation().missingInformation()}">
-                            <li th:text="${m}">missing</li>
+                        <ul style="margin:0;padding-left:18px;font-size:.86rem" th:if="${recommendation != null}">
+                            <li th:each="m : ${recommendation.recommendation().missingInformation()}"
+                                th:text="${m}">missing</li>
                         </ul>
                     </section>
                 </aside>

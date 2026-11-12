@@ -83,6 +83,19 @@ public class UiFormat {
         };
     }
 
+    /** Timeline marker tone for tool-trace statuses and audit event types. */
+    public String timelineTone(Enum<?> value) {
+        if (value == null) {
+            return "timeline__item--info";
+        }
+        return switch (value.name()) {
+            case "SUCCESS", "REVIEW_SUBMITTED" -> "timeline__item--ok";
+            case "NOT_FOUND", "TIMEOUT" -> "timeline__item--warn";
+            case "ERROR", "REJECTED", "RECOMMENDATION_REJECTED" -> "timeline__item--danger";
+            default -> "timeline__item--info";
+        };
+    }
+
     /** Short provenance label distinguishing claim, observed evidence, generated text, policy and review. */
     public String provenanceLabel(Enum<?> provenance) {
         if (provenance == null) {
@@ -96,6 +109,20 @@ public class UiFormat {
             case "RULE_ENGINE" -> "Generated (rules)";
             case "MODEL_INTERPRETATION" -> "Generated (model)";
             default -> label(provenance);
+        };
+    }
+
+    /** String-keyed variant used where templates cannot reference enum constants. */
+    public String provenanceLabelKey(String key) {
+        return switch (key == null ? "" : key) {
+            case "claim" -> "Customer claim";
+            case "observed" -> "Observed evidence";
+            case "analyst" -> "Analyst note";
+            case "generated-rules" -> "Generated (rules)";
+            case "generated-model" -> "Generated (model)";
+            case "policy" -> "Policy passage";
+            case "review" -> "Reviewer decision";
+            default -> "Unknown source";
         };
     }
 }

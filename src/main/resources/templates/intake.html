@@ -24,12 +24,12 @@
                     account number. Every case requires human review before any disposition.</span>
             </div>
 
-            <div class="alert alert--danger" th:if="${#fields.hasGlobalErrors()}" role="alert">
-                <span class="alert__icon" aria-hidden="true">!</span>
-                <span th:each="err : ${#fields.globalErrors()}" th:text="${err}">Invalid input.</span>
-            </div>
-
             <form th:action="@{/ui/cases}" th:object="${form}" method="post" novalidate>
+                <div class="alert alert--danger" th:if="${#fields.hasGlobalErrors()}" role="alert">
+                    <span class="alert__icon" aria-hidden="true">!</span>
+                    <span th:each="err : ${#fields.globalErrors()}" th:text="${err}">Invalid input.</span>
+                </div>
+
                 <div class="grid grid--2">
                     <section class="card" aria-labelledby="intake-customer">
                         <h2 class="card__title" id="intake-customer">Customer</h2>

@@ -26,7 +26,7 @@
                 <article class="evidence-card" aria-label="Customer claim">
                     <div class="evidence-card__head">
                         <span class="evidence-card__type">Customer claim &amp; statement</span>
-                        <span th:replace="~{fragments/components :: provenance(T(com.capstone.fraudcase.domain.ProvenanceType).CUSTOMER_STATEMENT)}"></span>
+                        <span th:replace="~{fragments/components :: provenanceKey('claim')}"></span>
                     </div>
                     <p class="evidence-card__result" th:text="${c.customerStatement()}">statement</p>
                     <div class="evidence-card__foot">

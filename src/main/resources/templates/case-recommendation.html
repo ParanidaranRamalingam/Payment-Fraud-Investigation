@@ -71,7 +71,7 @@
                     <section class="card" aria-labelledby="rationale-title">
                         <h2 class="card__title" id="rationale-title">Rationale</h2>
                         <p class="text-small">
-                            <span th:replace="~{fragments/components :: provenance(${rec.processorMode().name() == 'AI' ? T(com.capstone.fraudcase.domain.ProvenanceType).MODEL_INTERPRETATION : T(com.capstone.fraudcase.domain.ProvenanceType).RULE_ENGINE)})"></span>
+                            <span th:replace="~{fragments/components :: provenanceKey(${rec.processorMode().name() == 'AI' ? 'generated-model' : 'generated-rules'})}"></span>
                             Generated summary — not hidden reasoning.</p>
                         <p th:text="${rec.rationale()}">rationale</p>
                     </section>
