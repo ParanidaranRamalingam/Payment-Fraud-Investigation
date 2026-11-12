@@ -3,6 +3,7 @@ package com.capstone.fraudcase.knowledge;
 import com.capstone.fraudcase.agent.common.RecommendationValidator;
 import com.capstone.fraudcase.agent.rules.RulesFraudCaseAgent;
 import com.capstone.fraudcase.application.InvestigationOrchestrator;
+import com.capstone.fraudcase.memory.CaseConversationMemory;
 import com.capstone.fraudcase.application.InvestigationResult;
 import com.capstone.fraudcase.domain.ClaimType;
 import com.capstone.fraudcase.domain.Classification;
@@ -46,7 +47,8 @@ class PolicyRetrievalMySqlTest {
 
     @TestConfiguration(proxyBeanMethods = false)
     @ComponentScan(basePackageClasses = {InvestigationOrchestrator.class, ToolInvoker.class,
-            RulesFraudCaseAgent.class, RecommendationValidator.class, AuditTrail.class, PolicyRetriever.class})
+            RulesFraudCaseAgent.class, RecommendationValidator.class, AuditTrail.class, PolicyRetriever.class,
+            CaseConversationMemory.class})
     static class RagComponents {
     }
 

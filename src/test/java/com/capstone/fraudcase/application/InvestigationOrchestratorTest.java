@@ -15,6 +15,8 @@ import com.capstone.fraudcase.domain.Route;
 import com.capstone.fraudcase.knowledge.LexicalHashEmbeddingModel;
 import com.capstone.fraudcase.knowledge.PolicyProperties;
 import com.capstone.fraudcase.knowledge.PolicyRetriever;
+import com.capstone.fraudcase.memory.CaseConversationMemory;
+import com.capstone.fraudcase.memory.MemoryProperties;
 import com.capstone.fraudcase.persistence.audit.AuditTrail;
 import com.capstone.fraudcase.persistence.entity.EvidenceItemEntity;
 import com.capstone.fraudcase.persistence.entity.FraudCaseEntity;
@@ -100,7 +102,8 @@ class InvestigationOrchestratorTest {
                 new LexicalHashEmbeddingModel(), new PolicyProperties(4, 0.72, 800, 64, false));
         return new InvestigationOrchestrator(cases, claims, traces, evidence, recommendations, citations, toolInvoker,
                 processor, new RecommendationValidator(), new AuditTrail(auditRepository), SyntheticCases.FIXED_CLOCK,
-                new RulesCaseAssistant(), mock(CaseMessageRepository.class), retriever,
+                new RulesCaseAssistant(), mock(CaseMessageRepository.class),
+                new CaseConversationMemory(mock(CaseMessageRepository.class), new MemoryProperties(20)), retriever,
                 mock(PolicyRetrievalTraceRepository.class));
     }
 

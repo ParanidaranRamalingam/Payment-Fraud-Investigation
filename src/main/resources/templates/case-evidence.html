@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Evidence')}"></head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<div class="app-shell">
+    <nav th:replace="~{fragments/layout :: nav('evidence')}"></nav>
+    <main class="app-main" id="main">
+        <div class="app-main__inner">
+            <div class="page-head">
+                <div>
+                    <h1 class="page-title">Evidence workspace</h1>
+                    <p class="page-sub">Every material fact with its provenance, status and collection time.
+                        Unavailable results are shown, never fabricated.</p>
+                </div>
+            </div>
+
+            <th:block th:replace="~{fragments/components :: flash}"/>
+            <div th:replace="~{fragments/components :: caseStrip}"></div>
+            <div th:replace="~{fragments/components :: caseTabs('evidence')}"></div>
+
+            <div class="grid grid--evidence">
+                <!-- The customer's own claim is evidence too — labelled as such. -->
+                <article class="evidence-card" aria-label="Customer claim">
+                    <div class="evidence-card__head">
+                        <span class="evidence-card__type">Customer claim &amp; statement</span>
+                        <span th:replace="~{fragments/components :: provenance(T(com.capstone.fraudcase.domain.ProvenanceType).CUSTOMER_STATEMENT)}"></span>
+                    </div>
+                    <p class="evidence-card__result" th:text="${c.customerStatement()}">statement</p>
+                    <div class="evidence-card__foot">
+                        <span th:text="${c.claim != null ? @uiFormat.label(c.claim.claimType()) : 'No claim'}">claim</span>
+                        <span th:text="${@uiFormat.ts(c.createdAt())}">time</span>
+                    </div>
+                </article>
+
+                <article class="evidence-card" th:each="e : ${evidence}"
+                         th:classappend="${!e.isAvailable()} ? 'evidence-card--unavailable'"
+                         th:aria-label="${e.tool() != null ? e.tool().toolId() : 'evidence'}">
+                    <div class="evidence-card__head">
+                        <span class="evidence-card__type" th:text="${e.tool() != null ? e.tool().toolId() : 'Recorded fact'}">type</span>
+                        <span th:replace="~{fragments/components :: provenance(${e.provenance()})}"></span>
+                    </div>
+                    <div>
+                        <th:block th:replace="~{fragments/components :: badge(${e.status()})}"/>
+                    </div>
+                    <p class="evidence-card__result" th:text="${e.summary()}">result</p>
+                    <details class="tool-result" th:if="${e.payload() != null}">
+                        <summary>Canonical payload</summary>
+                        <div class="tool-result__body" th:text="${e.payload()}">payload</div>
+                    </details>
+                    <div class="evidence-card__foot">
+                        <span class="evidence-card__id" th:text="'id ' + ${#strings.abbreviate(e.evidenceId(), 13)}">id</span>
+                        <span th:if="${e.source() != null}" th:text="${e.source()}">source</span>
+                        <span th:text="${@uiFormat.ts(e.collectedAt())}">time</span>
+                    </div>
+                </article>
+            </div>
+
+            <div class="card mt-2" th:if="${#lists.isEmpty(evidence)}">
+                <th:block th:replace="~{fragments/components :: emptyState('&#128462;', 'No tool evidence yet',
+                    'Run the investigation to collect evidence through the bounded, allow-listed tool plan.')}"/>
+            </div>
+
+            <div class="card mt-2" th:if="${!unavailableEvidence.isEmpty()}">
+                <div class="alert alert--warn" role="status" style="margin:0">
+                    <span class="alert__icon" aria-hidden="true">&#9888;</span>
+                    <span><span th:text="${unavailableEvidence.size()}">1</span> evidence item(s) are
+                        unavailable, timed out or not found — the investigation treated them as explicit gaps,
+                        not as facts.</span>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

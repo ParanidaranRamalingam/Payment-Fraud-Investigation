@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Investigation')}"></head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<div class="app-shell">
+    <nav th:replace="~{fragments/layout :: nav('investigation')}"></nav>
+    <main class="app-main" id="main">
+        <div class="app-main__inner">
+            <div class="page-head">
+                <div>
+                    <h1 class="page-title">Investigation</h1>
+                    <p class="page-sub">Bounded evidence plan and tool execution for this case.</p>
+                </div>
+            </div>
+
+            <th:block th:replace="~{fragments/components :: flash}"/>
+            <div th:replace="~{fragments/components :: caseStrip}"></div>
+            <div th:replace="~{fragments/components :: caseTabs('investigation')}"></div>
+
+            <div class="grid grid--sidebar">
+                <div>
+                    <!-- Customer claim (untrusted, provenance-tagged) -->
+                    <section class="card" aria-labelledby="claim-title">
+                        <h2 class="card__title" id="claim-title">Customer claim</h2>
+                        <dl class="kv" th:if="${c.claim != null}">
+                            <dt>Claim type</dt>
+                            <dd>
+                                <span th:text="${@uiFormat.label(c.claim.claimType())}">Type</span>
+                                <span th:replace="~{fragments/components :: provenance(T(com.capstone.fraudcase.domain.ProvenanceType).CUSTOMER_STATEMENT)}"></span>
+                            </dd>
+                            <dt>Merchant</dt>
+                            <dd th:text="${c.claim.merchantName()}">merchant</dd>
+                            <dt>Amount</dt>
+                            <dd th:text="${@uiFormat.money(c.claim.amount(), c.claim.currency())}">amount</dd>
+                            <dt>Transaction</dt>
+                            <dd class="mono" th:text="${c.claim.transactionReference()} + ' at ' + ${@uiFormat.ts(c.claim.transactionAt())}">ref</dd>
+                            <dt>Statement</dt>
+                            <dd th:text="${c.customerStatement()}">statement</dd>
+                        </dl>
+                        <p class="text-muted" th:if="${c.claim == null}">No transaction claim is attached to this case.</p>
+                    </section>
+
+                    <!-- Bounded plan + tool execution -->
+                    <section class="card" aria-labelledby="plan-title">
+                        <h2 class="card__title" id="plan-title">Tool execution</h2>
+                        <p class="section-sub">
+                            Bounded plan: <span th:text="${planTools.size()}">6</span> allow-listed tools,
+                            <span th:text="${traces.size()}">0</span> invocation(s) recorded.
+                            Each result is redacted and expandable.
+                        </p>
+
+                        <div class="alert alert--info" role="status" th:if="${traces.isEmpty() and canInvestigate}">
+                            <span class="alert__icon" aria-hidden="true">&#8505;</span>
+                            <span>No tool runs yet. Start the investigation to execute the bounded plan.</span>
+                        </div>
+
+                        <ol class="timeline" th:if="${!traces.isEmpty()}">
+                            <li class="timeline__item" th:each="t : ${traces}"
+                                th:classappend="${t.status().name() == 'SUCCESS'} ? 'timeline__item--ok' :
+                                    (t.status().name() == 'NOT_FOUND' or t.status().name() == 'TIMEOUT') ? 'timeline__item--warn' :
+                                    (t.status().name() == 'SUCCESS' ? '' : 'timeline__item--danger')">
+                                <span class="timeline__marker" aria-hidden="true">&#9881;</span>
+                                <div class="timeline__body">
+                                    <div class="timeline__title">
+                                        <span th:text="${t.tool().toolId()}">tool</span>
+                                        <th:block th:replace="~{fragments/components :: badge(${t.status()})}"/>
+                                    </div>
+                                    <div class="timeline__meta">
+                                        trace <span th:text="${#strings.abbreviate(t.traceId(), 13)}">id</span> ·
+                                        <span th:text="${@uiFormat.ms(t.durationMs())}">ms</span> ·
+                                        <span th:text="${@uiFormat.ts(t.startedAt())}">start</span>
+                                        <span th:if="${t.errorCode() != null}"> · error <span th:text="${t.errorCode()}">code</span></span>
+                                    </div>
+                                    <details class="tool-result">
+                                        <summary>Redacted result</summary>
+                                        <div class="tool-result__body" th:text="${t.resultSummary() != null ? t.resultSummary() : 'No result recorded.'}">result</div>
+                                    </details>
+                                    <details class="tool-result">
+                                        <summary>Request summary</summary>
+                                        <div class="tool-result__body" th:text="${t.requestSummary() != null ? t.requestSummary() : '—'}">request</div>
+                                    </details>
+                                </div>
+                            </li>
+                        </ol>
+                    </section>
+
+                    <section class="card" th:replace="~{fragments/components :: conversation}"></section>
+                </div>
+
+                <!-- Side panel: plan checklist + unresolved information -->
+                <aside>
+                    <section class="card" aria-labelledby="checklist-title">
+                        <h2 class="card__title" id="checklist-title">Plan progress</h2>
+                        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px">
+                            <li th:each="tool : ${planTools}" style="display:flex;gap:8px;align-items:center;font-size:.88rem">
+                                <span aria-hidden="true"
+                                      th:text="${latestTraceByTool[tool] != null} ? '✓' : '○'">○</span>
+                                <span th:text="${tool.toolId()}">tool</span>
+                                <span th:if="${latestTraceByTool[tool] != null}">
+                                    <th:block th:replace="~{fragments/components :: badge(${latestTraceByTool[tool].status()})}"/>
+                                </span>
+                                <span class="text-muted" th:if="${latestTraceByTool[tool] == null}">pending</span>
+                            </li>
+                        </ul>
+                    </section>
+
+                    <section class="card" aria-labelledby="gaps-title">
+                        <h2 class="card__title" id="gaps-title">Missing / unresolved</h2>
+                        <div th:if="${unavailableEvidence.isEmpty() and (recommendation == null or recommendation.recommendation().missingInformation().isEmpty())}">
+                            <th:block th:replace="~{fragments/components :: emptyState('&#9989;', 'No gaps recorded',
+                                'No unavailable evidence or missing information has been recorded.')}"/>
+                        </div>
+                        <ul style="margin:0;padding-left:18px;font-size:.86rem" th:if="${!unavailableEvidence.isEmpty()}">
+                            <li th:each="e : ${unavailableEvidence}" th:text="${(e.tool() != null ? e.tool().toolId() : 'evidence') + ' — ' + @uiFormat.label(e.status())}">gap</li>
+                        </ul>
+                        <ul style="margin:0;padding-left:18px;font-size:.86rem" th:if="${recommendation != null}"
+                            th:each="m : ${recommendation.recommendation().missingInformation()}">
+                            <li th:text="${m}">missing</li>
+                        </ul>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

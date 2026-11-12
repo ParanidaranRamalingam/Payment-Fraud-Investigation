@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('New case')}"></head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<div class="app-shell">
+    <nav th:replace="~{fragments/layout :: nav('new')}"></nav>
+    <main class="app-main" id="main">
+        <div class="app-main__inner">
+            <div class="page-head">
+                <div>
+                    <h1 class="page-title">Case intake</h1>
+                    <p class="page-sub">Register a customer dispute for bounded investigation. The case ID and
+                        analyst identity are assigned by the server.</p>
+                </div>
+            </div>
+
+            <div class="alert alert--info" role="note">
+                <span class="alert__icon" aria-hidden="true">&#8505;</span>
+                <span><strong>Synthetic data only.</strong> This workspace accepts masked or tokenized
+                    references (e.g. <code>cus_8f3kA21x</code>, <code>****1234</code>) — never a full card or
+                    account number. Every case requires human review before any disposition.</span>
+            </div>
+
+            <div class="alert alert--danger" th:if="${#fields.hasGlobalErrors()}" role="alert">
+                <span class="alert__icon" aria-hidden="true">!</span>
+                <span th:each="err : ${#fields.globalErrors()}" th:text="${err}">Invalid input.</span>
+            </div>
+
+            <form th:action="@{/ui/cases}" th:object="${form}" method="post" novalidate>
+                <div class="grid grid--2">
+                    <section class="card" aria-labelledby="intake-customer">
+                        <h2 class="card__title" id="intake-customer">Customer</h2>
+                        <div class="field" th:classappend="${#fields.hasErrors('customerReference')} ? 'field--error'">
+                            <label for="customerReference">Customer reference</label>
+                            <input type="text" id="customerReference" th:field="*{customerReference}"
+                                   placeholder="cus_8f3kA21x" autocomplete="off" required>
+                            <span class="hint">Tokenized or masked reference, e.g. <code>cus_8f3kA21x</code> or
+                                <code>acct_9Qw22Lm</code>.</span>
+                            <span class="field__error" th:errors="*{customerReference}"></span>
+                        </div>
+                        <div class="field" th:classappend="${#fields.hasErrors('cardReference')} ? 'field--error'">
+                            <label for="cardReference">Card reference <span class="text-muted">(optional)</span></label>
+                            <input type="text" id="cardReference" th:field="*{cardReference}"
+                                   placeholder="****1234" autocomplete="off">
+                            <span class="hint">Masked PAN — last four digits only, e.g. <code>****1234</code>.</span>
+                            <span class="field__error" th:errors="*{cardReference}"></span>
+                        </div>
+                    </section>
+
+                    <section class="card" aria-labelledby="intake-transaction">
+                        <h2 class="card__title" id="intake-transaction">Transaction</h2>
+                        <div class="field" th:classappend="${#fields.hasErrors('transactionReference')} ? 'field--error'">
+                            <label for="transactionReference">Transaction reference</label>
+                            <input type="text" id="transactionReference" th:field="*{transactionReference}"
+                                   placeholder="txn_fraud_001" autocomplete="off" required>
+                            <span class="hint">6–64 letters, digits, underscores or dashes.</span>
+                            <span class="field__error" th:errors="*{transactionReference}"></span>
+                        </div>
+                        <div class="field" th:classappend="${#fields.hasErrors('merchantName')} ? 'field--error'">
+                            <label for="merchantName">Merchant name</label>
+                            <input type="text" id="merchantName" th:field="*{merchantName}"
+                                   placeholder="SYNTH SHOP 4412" autocomplete="off" required>
+                            <span class="field__error" th:errors="*{merchantName}"></span>
+                        </div>
+                        <div class="grid grid--2">
+                            <div class="field" th:classappend="${#fields.hasErrors('merchantCategoryCode')} ? 'field--error'">
+                                <label for="merchantCategoryCode">MCC <span class="text-muted">(optional)</span></label>
+                                <input type="text" id="merchantCategoryCode" th:field="*{merchantCategoryCode}"
+                                       placeholder="5411" inputmode="numeric" autocomplete="off">
+                                <span class="field__error" th:errors="*{merchantCategoryCode}"></span>
+                            </div>
+                            <div class="field" th:classappend="${#fields.hasErrors('transactionAt')} ? 'field--error'">
+                                <label for="transactionAt">Transaction time (UTC)</label>
+                                <input type="datetime-local" id="transactionAt" th:field="*{transactionAt}" required>
+                                <span class="field__error" th:errors="*{transactionAt}"></span>
+                            </div>
+                        </div>
+                        <div class="grid grid--2">
+                            <div class="field" th:classappend="${#fields.hasErrors('amount')} ? 'field--error'">
+                                <label for="amount">Amount</label>
+                                <input type="number" id="amount" th:field="*{amount}" min="0.01" step="0.01"
+                                       placeholder="249.99" required>
+                                <span class="field__error" th:errors="*{amount}"></span>
+                            </div>
+                            <div class="field" th:classappend="${#fields.hasErrors('currency')} ? 'field--error'">
+                                <label for="currency">Currency</label>
+                                <input type="text" id="currency" th:field="*{currency}" maxlength="3"
+                                       placeholder="USD" required>
+                                <span class="hint">ISO 4217 code.</span>
+                                <span class="field__error" th:errors="*{currency}"></span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="card" aria-labelledby="intake-claim">
+                    <h2 class="card__title" id="intake-claim">Claim</h2>
+                    <div class="grid grid--2">
+                        <div class="field" th:classappend="${#fields.hasErrors('claimType')} ? 'field--error'">
+                            <label for="claimType">Claim type</label>
+                            <select id="claimType" th:field="*{claimType}" required>
+                                <option value="" disabled selected>Select the customer's report…</option>
+                                <option th:each="t : ${claimTypes}" th:value="${t}" th:text="${@uiFormat.label(t)}"></option>
+                            </select>
+                            <span class="field__error" th:errors="*{claimType}"></span>
+                        </div>
+                    </div>
+                    <div class="field" th:classappend="${#fields.hasErrors('customerStatement')} ? 'field--error'">
+                        <label for="customerStatement">Customer statement</label>
+                        <textarea id="customerStatement" th:field="*{customerStatement}" rows="4" maxlength="2000"
+                                  placeholder="The customer's own words, e.g. 'I do not recognise this charge.'"
+                                  required></textarea>
+                        <span class="hint">Treated as untrusted data — never executed or interpreted as instructions.</span>
+                        <span class="field__error" th:errors="*{customerStatement}"></span>
+                    </div>
+                    <div class="field field--inline" th:classappend="${#fields.hasErrors('syntheticDataConfirmed')} ? 'field--error'">
+                        <input type="checkbox" id="syntheticDataConfirmed" th:field="*{syntheticDataConfirmed}">
+                        <label for="syntheticDataConfirmed">I confirm this case uses only synthetic or masked data.</label>
+                        <span class="field__error" th:errors="*{syntheticDataConfirmed}"></span>
+                    </div>
+                    <div class="field field--inline" th:classappend="${#fields.hasErrors('reviewRequired')} ? 'field--error'">
+                        <input type="checkbox" id="reviewRequired" th:field="*{reviewRequired}">
+                        <label for="reviewRequired">I understand every recommendation is advisory and requires human review.</label>
+                        <span class="field__error" th:errors="*{reviewRequired}"></span>
+                    </div>
+                </section>
+
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit">Start investigation intake</button>
+                    <a class="btn btn--ghost" th:href="@{/ui}">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+</body>
+</html>

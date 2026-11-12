@@ -16,6 +16,7 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Clock;
@@ -69,16 +70,22 @@ public class SecurityConfiguration {
         return http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
-                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/error", "/css/**", "/favicon.ico", "/favicon.svg").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/cases/*/reviews").hasRole(reviewer)
                         .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole(analyst, reviewer)
                         .requestMatchers("/api/**").hasRole(analyst)
+                        .requestMatchers(HttpMethod.POST, "/ui/cases/*/reviews").hasRole(reviewer)
+                        .requestMatchers(HttpMethod.POST, "/ui/**").hasRole(analyst)
+                        .requestMatchers("/", "/ui", "/ui/**").hasAnyRole(analyst, reviewer)
                         .anyRequest().denyAll())
                 .httpBasic(basic -> basic.realmName(ApiSecurityErrorHandler.REALM).authenticationEntryPoint(errors))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(errors).accessDeniedHandler(errors))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Stateless API authenticated per request with an Authorization header: no ambient cookie, so no CSRF risk.
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
+                // The JSON API stays CSRF-exempt (stateless, no ambient cookie). UI form posts DO need
+                // protection because browsers resend Basic credentials ambiently; a cookie token repository
+                // keeps everything session-free while Thymeleaf submits the token as a hidden field.
+                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers("/api/**"))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
                 .build();

@@ -2,6 +2,7 @@ package com.capstone.fraudcase.application;
 
 import com.capstone.fraudcase.domain.ActorType;
 import com.capstone.fraudcase.domain.AuditEventType;
+import com.capstone.fraudcase.domain.CaseMessage;
 import com.capstone.fraudcase.domain.CaseStateMachine;
 import com.capstone.fraudcase.domain.CaseStatus;
 import com.capstone.fraudcase.domain.Classification;
@@ -14,7 +15,9 @@ import com.capstone.fraudcase.domain.ReviewDisposition;
 import com.capstone.fraudcase.domain.Route;
 import com.capstone.fraudcase.domain.ToolTrace;
 import com.capstone.fraudcase.domain.TransactionClaim;
+import com.capstone.fraudcase.memory.CaseConversationMemory;
 import com.capstone.fraudcase.persistence.audit.AuditTrail;
+import com.capstone.fraudcase.persistence.entity.AuditEventEntity;
 import com.capstone.fraudcase.persistence.entity.EvidenceItemEntity;
 import com.capstone.fraudcase.persistence.entity.FraudCaseEntity;
 import com.capstone.fraudcase.persistence.entity.PolicyCitationEntity;
@@ -29,6 +32,7 @@ import com.capstone.fraudcase.persistence.repository.RecommendationRepository;
 import com.capstone.fraudcase.persistence.repository.ReviewDispositionRepository;
 import com.capstone.fraudcase.persistence.repository.ToolTraceRepository;
 import com.capstone.fraudcase.persistence.repository.TransactionClaimRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +54,8 @@ import java.util.regex.Pattern;
 @Service
 public class FraudCaseService {
 
+    private static final int MAX_CASE_LIST = 200;
+
     private static final Pattern CASE_ID = Pattern.compile(
             "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
 
@@ -63,12 +69,13 @@ public class FraudCaseService {
     private final InvestigationOrchestrator orchestrator;
     private final AuditTrail audit;
     private final Clock clock;
+    private final CaseConversationMemory memory;
 
     public FraudCaseService(FraudCaseRepository cases, TransactionClaimRepository claims,
                             EvidenceItemRepository evidence, ToolTraceRepository traces,
                             RecommendationRepository recommendations, PolicyCitationRepository citations,
                             ReviewDispositionRepository reviews, InvestigationOrchestrator orchestrator,
-                            AuditTrail audit, Clock clock) {
+                            AuditTrail audit, Clock clock, CaseConversationMemory memory) {
         this.cases = cases;
         this.claims = claims;
         this.evidence = evidence;
@@ -79,6 +86,7 @@ public class FraudCaseService {
         this.orchestrator = orchestrator;
         this.audit = audit;
         this.clock = clock;
+        this.memory = memory;
     }
 
     @Transactional
@@ -108,6 +116,34 @@ public class FraudCaseService {
         return new InvestigationOutcome(caseId, result.status(), result.fallbackUsed(), result.policyGrounded(),
                 new RecordedRecommendation(saved.getId(), result.recommendation(), saved.getCreatedAt()),
                 result.evidence());
+    }
+
+    /** Case list for the analyst workspace, newest first (bounded for dashboard density). */
+    @Transactional(readOnly = true)
+    public List<CaseView> listCases() {
+        return cases.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
+                .limit(MAX_CASE_LIST)
+                .map(c -> view(c, claims.findByCaseId(c.getId())
+                        .map(TransactionClaimEntity::toDomain).orElse(null)))
+                .toList();
+    }
+
+    /** Append-only audit history of the case, oldest first. */
+    @Transactional(readOnly = true)
+    public List<AuditEventEntity> auditTrail(String caseId) {
+        requireCase(caseId);
+        return audit.history(caseId);
+    }
+
+    /** The bounded conversation-memory window of the case plus the total stored message count. */
+    @Transactional(readOnly = true)
+    public List<CaseMessage> conversation(String caseId) {
+        requireCase(caseId);
+        return memory.recent(caseId);
+    }
+
+    public long conversationSize(String caseId) {
+        return memory.size(caseId);
     }
 
     @Transactional(readOnly = true)

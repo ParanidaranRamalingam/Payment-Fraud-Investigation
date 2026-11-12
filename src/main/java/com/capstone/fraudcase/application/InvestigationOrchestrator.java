@@ -21,6 +21,7 @@ import com.capstone.fraudcase.domain.ProvenanceType;
 import com.capstone.fraudcase.domain.Route;
 import com.capstone.fraudcase.domain.TransactionClaim;
 import com.capstone.fraudcase.knowledge.PolicyRetriever;
+import com.capstone.fraudcase.memory.CaseConversationMemory;
 import com.capstone.fraudcase.knowledge.RetrievalOutcome;
 import com.capstone.fraudcase.persistence.audit.AuditTrail;
 import com.capstone.fraudcase.persistence.entity.CaseMessageEntity;
@@ -85,6 +86,7 @@ public class InvestigationOrchestrator {
     private final Clock clock;
     private final CaseAssistant assistant;
     private final CaseMessageRepository messages;
+    private final CaseConversationMemory memory;
     private final PolicyRetriever policyRetriever;
     private final PolicyRetrievalTraceRepository retrievalTraces;
 
@@ -94,10 +96,11 @@ public class InvestigationOrchestrator {
                                      ToolInvoker toolInvoker, FraudCaseProcessor processor,
                                      RecommendationValidator validator, AuditTrail audit, Clock clock,
                                      CaseAssistant assistant, CaseMessageRepository messages,
-                                     PolicyRetriever policyRetriever,
+                                     CaseConversationMemory memory, PolicyRetriever policyRetriever,
                                      PolicyRetrievalTraceRepository retrievalTraces) {
         this.assistant = assistant;
         this.messages = messages;
+        this.memory = memory;
         this.policyRetriever = policyRetriever;
         this.retrievalTraces = retrievalTraces;
         this.cases = cases;
@@ -176,7 +179,7 @@ public class InvestigationOrchestrator {
                         .map(PolicyCitationEntity::toDomain).toList()))
                 .orElse(null);
         CaseMessageContext context = new CaseMessageContext(caseId, fraudCase.getStatus(), caseEvidence, latest,
-                message);
+                message, memory.recent(caseId));
         CaseMessageEntity question = messages.save(CaseMessageEntity.analystMessage(caseId, actorId, message,
                 clock.instant()));
 

@@ -3,6 +3,7 @@ package com.capstone.fraudcase.persistence;
 import com.capstone.fraudcase.agent.common.RecommendationValidator;
 import com.capstone.fraudcase.agent.rules.RulesFraudCaseAgent;
 import com.capstone.fraudcase.application.InvestigationOrchestrator;
+import com.capstone.fraudcase.memory.CaseConversationMemory;
 import com.capstone.fraudcase.application.InvestigationResult;
 import com.capstone.fraudcase.domain.AuditEventType;
 import com.capstone.fraudcase.domain.CaseStatus;
@@ -56,7 +57,8 @@ class InvestigationMySqlTest {
 
     @TestConfiguration(proxyBeanMethods = false)
     @ComponentScan(basePackageClasses = {InvestigationOrchestrator.class, ToolInvoker.class,
-            RulesFraudCaseAgent.class, RecommendationValidator.class, AuditTrail.class, PolicyRetriever.class})
+            RulesFraudCaseAgent.class, RecommendationValidator.class, AuditTrail.class, PolicyRetriever.class,
+            CaseConversationMemory.class})
     static class InvestigationComponents {
     }
 

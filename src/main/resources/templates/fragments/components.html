@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Status / risk badge: text always accompanies colour. -->
+<th:block th:fragment="badge(value)">
+    <span class="badge" th:classappend="${@uiFormat.badgeTone(value)}" th:text="${@uiFormat.label(value)}">—</span>
+</th:block>
+
+<th:block th:fragment="riskBadge(value)">
+    <span class="badge badge--risk" th:classappend="${@uiFormat.badgeTone(value)}"
+          th:text="'Risk: ' + ${@uiFormat.label(value)}">—</span>
+</th:block>
+
+<!-- Provenance tag: distinguishes claim / observed evidence / generated / policy / reviewer. -->
+<th:block th:fragment="provenance(value)">
+    <span class="provenance-tag" th:classappend="${'provenance-tag--' + (
+        value != null and value.name() == 'CUSTOMER_STATEMENT' ? 'claim' :
+        value != null and value.name() == 'TOOL_RESULT' ? 'observed' :
+        value != null and (value.name() == 'RULE_ENGINE' or value.name() == 'MODEL_INTERPRETATION' or value.name() == 'ANALYST_NOTE') ? 'generated' :
+        value != null and value.name() == 'POLICY_PASSAGE' ? 'policy' : 'review')}"
+          th:text="${@uiFormat.provenanceLabel(value)}">Source</span>
+</th:block>
+
+<!-- Case summary strip shown on every case page. -->
+<div class="case-strip" th:fragment="caseStrip">
+    <div class="case-strip__item">
+        <span class="case-strip__label">Case</span>
+        <span class="case-strip__id" th:text="${#strings.abbreviate(c.caseId, 13)}">case-id</span>
+    </div>
+    <div class="case-strip__item">
+        <span class="case-strip__label">Status</span>
+        <span><th:block th:replace="~{fragments/components :: badge(${c.status})}"/></span>
+    </div>
+    <div class="case-strip__item" th:if="${c.claim != null}">
+        <span class="case-strip__label">Claim</span>
+        <span class="case-strip__value" th:text="${@uiFormat.label(c.claim.claimType())}">Claim</span>
+    </div>
+    <div class="case-strip__item" th:if="${recommendation != null}">
+        <span class="case-strip__label">Recommended route</span>
+        <span class="case-strip__value" th:text="${@uiFormat.label(recommendation.recommendation().route())}">Route</span>
+    </div>
+    <div class="case-strip__item" th:if="${recommendation != null}">
+        <span class="case-strip__label">Risk</span>
+        <span><th:block th:replace="~{fragments/components :: riskBadge(${recommendation.recommendation().riskLevel()})}"/></span>
+    </div>
+    <div class="case-strip__item">
+        <span class="case-strip__label">Updated</span>
+        <span class="case-strip__value" th:text="${@uiFormat.ts(c.updatedAt())}">—</span>
+    </div>
+    <div class="case-strip__actions">
+        <form th:if="${canInvestigate}" th:action="@{/ui/cases/{id}/investigate(id=${c.caseId})}" method="post">
+            <button class="btn btn--primary" type="submit">Run investigation</button>
+        </form>
+        <a class="btn btn--secondary" th:if="${canReview}" th:href="@{/ui/cases/{id}/review(id=${c.caseId})}">Open review</a>
+    </div>
+</div>
+
+<!-- Case-page tab bar. -->
+<div class="case-tabs" th:fragment="caseTabs(active)" role="navigation" aria-label="Case workspace">
+    <a th:href="@{/ui/cases/{id}(id=${c.caseId})}" th:attr="aria-current=${active == 'investigation' ? 'page' : null}">Investigation</a>
+    <a th:href="@{/ui/cases/{id}/recommendation(id=${c.caseId})}" th:attr="aria-current=${active == 'recommendation' ? 'page' : null}">Recommendation</a>
+    <a th:href="@{/ui/cases/{id}/evidence(id=${c.caseId})}" th:attr="aria-current=${active == 'evidence' ? 'page' : null}">Evidence</a>
+    <a th:href="@{/ui/cases/{id}/citations(id=${c.caseId})}" th:attr="aria-current=${active == 'citations' ? 'page' : null}">Policy citations</a>
+    <a th:href="@{/ui/cases/{id}/review(id=${c.caseId})}" th:attr="aria-current=${active == 'review' ? 'page' : null}">Human review</a>
+</div>
+
+<!-- Flash notices / errors. -->
+<th:block th:fragment="flash">
+    <div class="alert alert--ok" th:if="${notice != null}" role="status">
+        <span class="alert__icon" aria-hidden="true">&#10003;</span><span th:text="${notice}">Done.</span>
+    </div>
+    <div class="alert alert--danger" th:if="${error != null}" role="alert">
+        <span class="alert__icon" aria-hidden="true">!</span><span th:text="${error}">Error.</span>
+    </div>
+</th:block>
+
+<!-- Empty state. -->
+<div class="empty-state" th:fragment="emptyState(icon, title, text)">
+    <div class="empty-state__icon" aria-hidden="true" th:text="${icon}">&#128196;</div>
+    <div class="empty-state__title" th:text="${title}">Nothing here</div>
+    <p class="empty-state__text" th:text="${text}">No data is available yet.</p>
+</div>
+
+<!-- Confidence visualisation. -->
+<div class="confidence" th:fragment="confidence(value)">
+    <div class="confidence__label">
+        <span>Confidence</span>
+        <span class="confidence__value" th:text="${@uiFormat.pct(value)}">—</span>
+    </div>
+    <div class="confidence__track" role="progressbar"
+         th:attr="aria-valuenow=${@uiFormat.pctValue(value)},aria-valuemin=0,aria-valuemax=100,aria-label='Recommendation confidence'">
+        <div class="confidence__fill" th:style="${'width: ' + @uiFormat.pctValue(value) + '%'}"></div>
+    </div>
+</div>
+
+<!-- Conversation thread (bounded case memory). -->
+<section th:fragment="conversation" id="conversation" aria-labelledby="conversation-title">
+    <h2 class="section-title" id="conversation-title">Case conversation</h2>
+    <p class="section-sub">Case-scoped memory only — the assistant sees the last
+        <span th:text="${messages.size()}">0</span> of
+        <span th:text="${messageCount}">0</span> stored messages for this case and can cite only its own evidence.</p>
+
+    <div th:if="${#lists.isEmpty(messages)}">
+        <th:block th:replace="~{fragments/components :: emptyState('&#128172;', 'No messages yet',
+            'Ask about this case\'s status, evidence, recommendation or policy citations. Replies are advisory and validated before being recorded.')}"/>
+    </div>
+    <div th:each="m : ${messages}" class="message"
+         th:classappend="${m.role().name() == 'ANALYST'} ? 'message--analyst' : 'message--assistant'">
+        <div class="message__meta">
+            <span th:replace="~{fragments/components :: provenance(${m.role().name() == 'ANALYST' ? T(com.capstone.fraudcase.domain.ProvenanceType).ANALYST_NOTE : (m.processorMode() != null and m.processorMode().name() == 'AI' ? T(com.capstone.fraudcase.domain.ProvenanceType).MODEL_INTERPRETATION : T(com.capstone.fraudcase.domain.ProvenanceType).RULE_ENGINE)})}"></span>
+            <span th:text="${m.authorId()}">author</span>
+            <span th:text="${@uiFormat.ts(m.createdAt())}">time</span>
+        </div>
+        <div class="message__content" th:text="${m.content()}">content</div>
+    </div>
+
+    <form th:if="${!c.status().isTerminal()}" th:action="@{/ui/cases/{id}/messages(id=${c.caseId})}" method="post" class="mt-2">
+        <div class="field">
+            <label for="message">Ask the case assistant</label>
+            <textarea id="message" name="message" rows="3" maxlength="2000" required
+                      placeholder="e.g. What is the recommendation and which evidence supports it?"></textarea>
+            <span class="hint">Advisory only. The assistant cannot take actions or access other cases.</span>
+        </div>
+        <button class="btn btn--secondary" type="submit">Send message</button>
+    </form>
+    <p class="text-muted text-small" th:if="${c.status().isTerminal()}">This case is closed; the conversation is read-only.</p>
+</section>
+
+<!-- Audit timeline. -->
+<section th:fragment="auditTimeline" aria-labelledby="audit-title">
+    <h2 class="section-title" id="audit-title">Audit trail</h2>
+    <p class="section-sub">Append-only record of every state change, tool call, recommendation and review.</p>
+    <div th:if="${#lists.isEmpty(audit)}">
+        <th:block th:replace="~{fragments/components :: emptyState('&#128393;', 'No audit events', 'No events have been recorded for this case yet.')}"/>
+    </div>
+    <ol class="timeline" th:if="${!#lists.isEmpty(audit)}">
+        <li class="timeline__item" th:each="e : ${audit}"
+            th:classappend="${e.eventType.name() == 'RECOMMENDATION_REJECTED'} ? 'timeline__item--danger' : (e.eventType.name() == 'REVIEW_SUBMITTED' ? 'timeline__item--ok' : 'timeline__item--info')">
+            <span class="timeline__marker" aria-hidden="true" th:text="${e.eventType.name().substring(0,1)}">E</span>
+            <div class="timeline__body">
+                <div class="timeline__title">
+                    <span th:text="${@uiFormat.label(e.eventType)}">Event</span>
+                    <span class="text-muted text-small" th:if="${e.fromStatus != null}"
+                          th:text="${@uiFormat.label(e.fromStatus)} + ' → ' + ${@uiFormat.label(e.toStatus)}"></span>
+                </div>
+                <div class="timeline__meta">
+                    <span th:text="${@uiFormat.ts(e.occurredAt)}">time</span> ·
+                    <span th:text="${e.actorType} + ':' + ${e.actorId}">actor</span>
+                    <span th:if="${e.correlationId != null}"> · corr <span th:text="${#strings.abbreviate(e.correlationId, 10)}">corr</span></span>
+                </div>
+                <div class="timeline__detail" th:if="${e.details != null}" th:text="${e.details}">details</div>
+            </div>
+        </li>
+    </ol>
+</section>
+
+</body>
+</html>

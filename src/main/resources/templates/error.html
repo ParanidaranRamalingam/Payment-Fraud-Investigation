@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Error')}"></head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<div class="app-shell">
+    <nav th:replace="~{fragments/layout :: nav('cases')}"></nav>
+    <main class="app-main" id="main">
+        <div class="app-main__inner">
+            <div class="card" style="max-width:640px;margin:48px auto">
+                <div class="empty-state">
+                    <div class="empty-state__icon" aria-hidden="true">&#9888;</div>
+                    <div class="empty-state__title" th:text="${errorTitle != null ? errorTitle : 'Something went wrong'}">Error</div>
+                    <p class="empty-state__text" th:text="${errorDetail != null ? errorDetail : 'The request could not be completed.'}">detail</p>
+                    <p class="mt-2"><a class="btn btn--secondary" th:href="@{/ui}">Back to cases</a></p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Human review')}"></head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<div class="app-shell">
+    <nav th:replace="~{fragments/layout :: nav('review')}"></nav>
+    <main class="app-main" id="main">
+        <div class="app-main__inner">
+            <div class="page-head">
+                <div>
+                    <h1 class="page-title">Human review</h1>
+                    <p class="page-sub">The reviewer disposition is the only authoritative decision. Rationale is
+                        mandatory and recorded in the audit trail.</p>
+                </div>
+            </div>
+
+            <th:block th:replace="~{fragments/components :: flash}"/>
+            <div th:replace="~{fragments/components :: caseStrip}"></div>
+            <div th:replace="~{fragments/components :: caseTabs('review')}"></div>
+
+            <div class="alert alert--info" role="note" th:if="${!reviewer}">
+                <span class="alert__icon" aria-hidden="true">&#8505;</span>
+                <span>You are signed in without the reviewer role. The disposition form is read-only for you.</span>
+            </div>
+            <div class="alert alert--warn" role="note" th:if="${!canReview}">
+                <span class="alert__icon" aria-hidden="true">&#8505;</span>
+                <span>This case is in status <strong th:text="${@uiFormat.label(c.status())}">status</strong>;
+                    no review action is currently available.</span>
+            </div>
+
+            <div class="grid grid--review">
+                <!-- Left: recommendation + evidence summary -->
+                <div>
+                    <section class="card" aria-labelledby="rev-rec-title">
+                        <h2 class="card__title" id="rev-rec-title">Advisory recommendation</h2>
+                        <p class="text-small">
+                            <span th:replace="~{fragments/components :: provenance(${recommendation != null and recommendation.recommendation().processorMode().name() == 'AI' ? T(com.capstone.fraudcase.domain.ProvenanceType).MODEL_INTERPRETATION : T(com.capstone.fraudcase.domain.ProvenanceType).RULE_ENGINE)})"></span>
+                            Advisory only — it never decides the case.</p>
+                        <dl class="review-summary" th:if="${recommendation != null}"
+                            th:with="rec=${recommendation.recommendation()}">
+                            <dt>Classification</dt><dd th:text="${@uiFormat.label(rec.classification())}">—</dd>
+                            <dt>Risk</dt><dd><th:block th:replace="~{fragments/components :: riskBadge(${rec.riskLevel()})}"/></dd>
+                            <dt>Proposed route</dt><dd th:text="${@uiFormat.label(rec.route())}">—</dd>
+                            <dt>Confidence</dt><dd th:text="${@uiFormat.pct(rec.confidence())}">—</dd>
+                            <dt>Rationale</dt><dd style="font-weight:400" th:text="${rec.rationale()}">—</dd>
+                            <dt th:if="${!rec.missingInformation().isEmpty()}">Missing information</dt>
+                            <dd th:if="${!rec.missingInformation().isEmpty()}" style="font-weight:400">
+                                <ul style="margin:0;padding-left:18px">
+                                    <li th:each="m : ${rec.missingInformation()}" th:text="${m}">m</li>
+                                </ul>
+                            </dd>
+                        </dl>
+                        <p class="text-muted" th:if="${recommendation == null}">No recommendation exists; only
+                            closing the case is possible.</p>
+                    </section>
+
+                    <section class="card" aria-labelledby="rev-ev-title">
+                        <h2 class="card__title" id="rev-ev-title">Evidence summary</h2>
+                        <p class="text-small" th:text="${evidence.size()} + ' item(s) collected; ' + ${unavailableEvidence.size()} + ' unavailable or timed out.'">summary</p>
+                        <ul style="margin:0;padding-left:18px;font-size:.86rem">
+                            <li th:each="e : ${evidence}" style="margin-bottom:4px">
+                                <span th:text="${e.tool() != null ? e.tool().toolId() : 'fact'}">tool</span>
+                                <th:block th:replace="~{fragments/components :: badge(${e.status()})}"/>
+                            </li>
+                        </ul>
+                    </section>
+                </div>
+
+                <!-- Right: disposition form + audit preview -->
+                <div>
+                    <section class="card" aria-labelledby="rev-form-title">
+                        <h2 class="card__title" id="rev-form-title">Record disposition</h2>
+
+                        <div class="alert alert--danger" th:if="${#fields.hasGlobalErrors()}" role="alert">
+                            <span class="alert__icon" aria-hidden="true">!</span>
+                            <span th:each="err : ${#fields.globalErrors()}" th:text="${err}">error</span>
+                        </div>
+
+                        <form th:if="${canReview and reviewer}" th:action="@{/ui/cases/{id}/reviews(id=${c.caseId})}"
+                              th:object="${form}" method="post">
+                            <input type="hidden" th:field="*{recommendationId}">
+
+                            <fieldset style="border:none;padding:0;margin:0 0 8px">
+                                <legend class="field" style="font-size:.82rem;font-weight:600;color:var(--ink-soft);margin-bottom:8px">
+                                    Disposition</legend>
+                                <label class="radio-card">
+                                    <input type="radio" th:field="*{decision}" value="ACCEPT"
+                                           th:disabled="${recommendation == null}">
+                                    <span>
+                                        <span class="radio-card__title">Accept</span>
+                                        <span class="radio-card__desc">Keep the recommended classification and
+                                            route; case moves to ROUTED.</span>
+                                    </span>
+                                </label>
+                                <label class="radio-card">
+                                    <input type="radio" th:field="*{decision}" value="OVERRIDE"
+                                           th:disabled="${recommendation == null}">
+                                    <span>
+                                        <span class="radio-card__title">Override</span>
+                                        <span class="radio-card__desc">Set a different final classification and
+                                            route — both are required.</span>
+                                    </span>
+                                </label>
+                                <label class="radio-card">
+                                    <input type="radio" th:field="*{decision}" value="CLOSE">
+                                    <span>
+                                        <span class="radio-card__title">Close</span>
+                                        <span class="radio-card__desc">Close the case without routing. No
+                                            financial, account or compliance action is taken.</span>
+                                    </span>
+                                </label>
+                                <span class="field__error" th:errors="*{decision}"></span>
+                            </fieldset>
+
+                            <div class="grid grid--2">
+                                <div class="field" th:classappend="${#fields.hasErrors('finalClassification')} ? 'field--error'">
+                                    <label for="finalClassification">Final classification <span class="text-muted">(override)</span></label>
+                                    <select id="finalClassification" th:field="*{finalClassification}">
+                                        <option value="">— keep recommendation —</option>
+                                        <option th:each="v : ${classifications}" th:value="${v}"
+                                                th:text="${@uiFormat.label(v)}"></option>
+                                    </select>
+                                    <span class="field__error" th:errors="*{finalClassification}"></span>
+                                </div>
+                                <div class="field" th:classappend="${#fields.hasErrors('finalRoute')} ? 'field--error'">
+                                    <label for="finalRoute">Final route <span class="text-muted">(override)</span></label>
+                                    <select id="finalRoute" th:field="*{finalRoute}">
+                                        <option value="">— keep recommendation —</option>
+                                        <option th:each="v : ${routes}" th:value="${v}"
+                                                th:text="${@uiFormat.label(v)}"></option>
+                                    </select>
+                                    <span class="field__error" th:errors="*{finalRoute}"></span>
+                                </div>
+                            </div>
+
+                            <div class="field" th:classappend="${#fields.hasErrors('rationale')} ? 'field--error'">
+                                <label for="rationale">Reviewer rationale <span aria-hidden="true">*</span></label>
+                                <textarea id="rationale" th:field="*{rationale}" rows="4" maxlength="2000" required
+                                          aria-required="true"
+                                          placeholder="Required: record why you accept, override or close (10–2000 characters)."></textarea>
+                                <span class="field__error" th:errors="*{rationale}"></span>
+                            </div>
+
+                            <div class="field field--inline"
+                                 th:if="${recommendation != null and !recommendation.recommendation().missingInformation().isEmpty()}"
+                                 th:classappend="${#fields.hasErrors('missingInfoAcknowledged')} ? 'field--error'">
+                                <input type="checkbox" id="missingInfoAcknowledged" th:field="*{missingInfoAcknowledged}">
+                                <label for="missingInfoAcknowledged">I acknowledge this recommendation lists
+                                    missing information and accounted for it in my decision.</label>
+                                <span class="field__error" th:errors="*{missingInfoAcknowledged}"></span>
+                            </div>
+
+                            <div class="btn-row">
+                                <button class="btn btn--primary" type="submit">Submit review</button>
+                            </div>
+                        </form>
+
+                        <p class="text-muted" th:if="${!canReview or !reviewer}">
+                            <span th:if="${!reviewer}">Sign in with a reviewer account to record a disposition.</span>
+                            <span th:if="${reviewer and !canReview}">This case cannot be reviewed in its current
+                                status.</span>
+                        </p>
+                    </section>
+
+                    <section class="card" th:replace="~{fragments/components :: auditTimeline}"></section>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

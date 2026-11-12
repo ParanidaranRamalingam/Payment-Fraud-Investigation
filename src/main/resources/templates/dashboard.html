@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Cases')}"></head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<div class="app-shell">
+    <nav th:replace="~{fragments/layout :: nav('cases')}"></nav>
+    <main class="app-main" id="main">
+        <div class="app-main__inner">
+            <div class="page-head">
+                <div>
+                    <h1 class="page-title">Case queue</h1>
+                    <p class="page-sub">Fraud and dispute cases awaiting investigation or human review.</p>
+                </div>
+                <a class="btn btn--primary" th:href="@{/ui/cases/new}">New case</a>
+            </div>
+
+            <th:block th:replace="~{fragments/components :: flash}"/>
+
+            <div class="grid grid--4 mb-2" role="list" aria-label="Case counts by status">
+                <div class="card metric" role="listitem" th:each="entry : ${counts}">
+                    <div class="metric__value" th:text="${entry.value}">0</div>
+                    <div class="metric__label" th:text="${@uiFormat.label(entry.key)}">Status</div>
+                </div>
+                <div class="card metric" role="listitem" th:if="${#lists.isEmpty(cases)}">
+                    <div class="metric__value">0</div>
+                    <div class="metric__label">Total cases</div>
+                </div>
+            </div>
+
+            <div class="table-wrap" th:if="${!#lists.isEmpty(cases)}">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th scope="col">Case</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Claim</th>
+                        <th scope="col">Merchant</th>
+                        <th scope="col">Amount</th>
+                        <th scope="col">Analyst</th>
+                        <th scope="col">Updated</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="kase : ${cases}">
+                        <td><a th:href="@{/ui/cases/{id}(id=${kase.caseId})}" class="mono"
+                               th:text="${#strings.abbreviate(kase.caseId, 13)}">case</a></td>
+                        <td><th:block th:replace="~{fragments/components :: badge(${kase.status})}"/></td>
+                        <td th:text="${kase.claim != null ? @uiFormat.label(kase.claim.claimType()) : '—'}">Claim</td>
+                        <td th:text="${kase.claim != null ? kase.claim.merchantName() : '—'}">Merchant</td>
+                        <td class="mono" th:text="${kase.claim != null ? @uiFormat.money(kase.claim.amount(), kase.claim.currency()) : '—'}">0.00</td>
+                        <td th:text="${kase.createdBy()}">analyst</td>
+                        <td class="text-muted" th:text="${@uiFormat.ts(kase.updatedAt())}">time</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card" th:if="${#lists.isEmpty(cases)}">
+                <th:block th:replace="~{fragments/components :: emptyState('&#128203;', 'No cases yet',
+                    'Create a case from a customer dispute to start a bounded investigation. Only synthetic, masked data is accepted.')}"/>
+                <div style="text-align:center"><a class="btn btn--primary" th:href="@{/ui/cases/new}">Create the first case</a></div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

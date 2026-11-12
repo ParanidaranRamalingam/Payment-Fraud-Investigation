@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Policy citations')}"></head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<div class="app-shell">
+    <nav th:replace="~{fragments/layout :: nav('citations')}"></nav>
+    <main class="app-main" id="main">
+        <div class="app-main__inner">
+            <div class="page-head">
+                <div>
+                    <h1 class="page-title">Policy citations</h1>
+                    <p class="page-sub">Approved, currently effective policy passages grounding the latest
+                        recommendation — quoted verbatim, never interpreted as instructions.</p>
+                </div>
+            </div>
+
+            <th:block th:replace="~{fragments/components :: flash}"/>
+            <div th:replace="~{fragments/components :: caseStrip}"></div>
+            <div th:replace="~{fragments/components :: caseTabs('citations')}"></div>
+
+            <!-- Explicit abstention states -->
+            <div class="card" th:if="${recommendation == null}">
+                <th:block th:replace="~{fragments/components :: emptyState('&#128214;', 'No recommendation yet',
+                    'Policy citations are attached to recommendations. Run the investigation first.')}"/>
+            </div>
+
+            <div class="card" th:if="${recommendation != null and #lists.isEmpty(citations)}">
+                <div class="alert alert--warn" role="status">
+                    <span class="alert__icon" aria-hidden="true">&#9888;</span>
+                    <span><strong>Policy abstention.</strong> No approved policy passage met the similarity
+                        threshold for this case, so no procedural guidance can be cited. The recommendation was
+                        routed to manual review and the missing policy evidence is recorded there.</span>
+                </div>
+            </div>
+
+            <div class="table-wrap" th:if="${!#lists.isEmpty(citations)}">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th scope="col">Document</th>
+                        <th scope="col">Version</th>
+                        <th scope="col">Effective</th>
+                        <th scope="col">Section</th>
+                        <th scope="col">Similarity</th>
+                        <th scope="col">Passage</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="cit : ${citations}">
+                        <td>
+                            <div th:text="${cit.documentTitle()}">title</div>
+                            <div class="mono text-muted" th:text="${cit.documentId()}">doc-id</div>
+                        </td>
+                        <td th:text="'v' + ${cit.documentVersion()}">v</td>
+                        <td th:text="${cit.effectiveDate()}">date</td>
+                        <td th:text="${cit.section()}">section</td>
+                        <td>
+                            <span class="similarity">
+                                <span class="similarity__track" aria-hidden="true">
+                                    <span class="similarity__fill"
+                                          th:style="${'width: ' + (cit.relevanceScore() * 100) + '%;display:block;height:100%'}"></span>
+                                </span>
+                                <span th:text="${@uiFormat.similarity(cit.relevanceScore())}">0.00</span>
+                            </span>
+                        </td>
+                        <td>
+                            <details class="tool-result">
+                                <summary th:text="${cit.chunkId()}">chunk</summary>
+                                <div class="citation-passage mt-2" th:text="${cit.excerpt()}">passage</div>
+                                <div class="timeline__meta mt-2">
+                                    chunk <span th:text="${cit.chunkId()}">id</span> · owner
+                                    <span th:text="${cit.owner()}">owner</span>
+                                    <span th:replace="~{fragments/components :: provenance(T(com.capstone.fraudcase.domain.ProvenanceType).POLICY_PASSAGE)}"></span>
+                                </div>
+                            </details>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

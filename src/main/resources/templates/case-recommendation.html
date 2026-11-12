@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Recommendation')}"></head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<div class="app-shell">
+    <nav th:replace="~{fragments/layout :: nav('recommendation')}"></nav>
+    <main class="app-main" id="main">
+        <div class="app-main__inner">
+            <div class="page-head">
+                <div>
+                    <h1 class="page-title">Recommendation</h1>
+                    <p class="page-sub">Advisory assessment produced by the <span th:text="${appMode}">RULES</span>
+                        processor. It never decides the case.</p>
+                </div>
+            </div>
+
+            <th:block th:replace="~{fragments/components :: flash}"/>
+            <div th:replace="~{fragments/components :: caseStrip}"></div>
+            <div th:replace="~{fragments/components :: caseTabs('recommendation')}"></div>
+
+            <div class="alert alert--warn" role="note">
+                <span class="alert__icon" aria-hidden="true">&#9888;</span>
+                <span><strong>Advisory only.</strong> This recommendation is generated assistance, not a decision.
+                    A human reviewer must record the final disposition.</span>
+            </div>
+
+            <div th:if="${recommendation == null}" class="card">
+                <th:block th:replace="~{fragments/components :: emptyState('&#128161;', 'No recommendation yet',
+                    'Run the bounded investigation to collect evidence and produce a validated advisory recommendation.')}"/>
+                <form th:if="${canInvestigate}" th:action="@{/ui/cases/{id}/investigate(id=${c.caseId})}" method="post" style="text-align:center">
+                    <button class="btn btn--primary" type="submit">Run investigation</button>
+                </form>
+            </div>
+
+            <th:block th:if="${recommendation != null}" th:with="rec=${recommendation.recommendation()}">
+                <section class="card card--raised card--highlight" aria-labelledby="rec-title">
+                    <h2 class="card__title" id="rec-title">Advisory assessment</h2>
+                    <div class="grid grid--4">
+                        <div>
+                            <div class="case-strip__label">Classification</div>
+                            <div style="font-size:1.15rem;font-weight:700" th:text="${@uiFormat.label(rec.classification())}">—</div>
+                        </div>
+                        <div>
+                            <div class="case-strip__label">Risk level</div>
+                            <div><th:block th:replace="~{fragments/components :: riskBadge(${rec.riskLevel()})}"/></div>
+                        </div>
+                        <div>
+                            <div class="case-strip__label">Proposed route</div>
+                            <div style="font-size:1.05rem;font-weight:650" th:text="${@uiFormat.label(rec.route())}">—</div>
+                        </div>
+                        <div>
+                            <div class="case-strip__label">Human review</div>
+                            <div><span class="badge badge--warn">Required</span></div>
+                        </div>
+                    </div>
+                    <hr class="divider">
+                    <div class="grid grid--2">
+                        <div th:replace="~{fragments/components :: confidence(${rec.confidence()})}"></div>
+                        <div class="text-small text-muted">
+                            Processor <span th:text="${rec.processorMode()}">RULES</span> · recorded
+                            <span th:text="${@uiFormat.ts(recommendation.createdAt())}">time</span> · id
+                            <span class="mono" th:text="${#strings.abbreviate(recommendation.recommendationId(), 13)}">rec</span>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="grid grid--2">
+                    <section class="card" aria-labelledby="rationale-title">
+                        <h2 class="card__title" id="rationale-title">Rationale</h2>
+                        <p class="text-small">
+                            <span th:replace="~{fragments/components :: provenance(${rec.processorMode().name() == 'AI' ? T(com.capstone.fraudcase.domain.ProvenanceType).MODEL_INTERPRETATION : T(com.capstone.fraudcase.domain.ProvenanceType).RULE_ENGINE)})"></span>
+                            Generated summary — not hidden reasoning.</p>
+                        <p th:text="${rec.rationale()}">rationale</p>
+                    </section>
+
+                    <section class="card" aria-labelledby="missing-title">
+                        <h2 class="card__title" id="missing-title">Missing / contradictory information</h2>
+                        <div th:if="${rec.missingInformation().isEmpty()}">
+                            <th:block th:replace="~{fragments/components :: emptyState('&#9989;', 'None recorded',
+                                'The recommendation lists no missing or contradictory information.')}"/>
+                        </div>
+                        <ul style="margin:0;padding-left:18px" th:if="${!rec.missingInformation().isEmpty()}">
+                            <li th:each="m : ${rec.missingInformation()}" th:text="${m}" style="margin-bottom:6px">missing</li>
+                        </ul>
+                    </section>
+                </div>
+
+                <div class="grid grid--2">
+                    <section class="card" aria-labelledby="rec-evidence-title">
+                        <h2 class="card__title" id="rec-evidence-title">Evidence relied upon</h2>
+                        <div th:if="${rec.evidenceIds().isEmpty()}">
+                            <p class="text-muted text-small">Insufficient-evidence outcome: no evidence was cited.</p>
+                        </div>
+                        <ul style="margin:0;padding-left:18px" th:if="${!rec.evidenceIds().isEmpty()}">
+                            <li th:each="id : ${rec.evidenceIds()}" style="margin-bottom:4px">
+                                <a class="mono" th:href="@{/ui/cases/{cid}/evidence(cid=${c.caseId})}"
+                                   th:text="${#strings.abbreviate(id, 18)}">evidence</a>
+                            </li>
+                        </ul>
+                    </section>
+
+                    <section class="card" aria-labelledby="rec-trace-title">
+                        <h2 class="card__title" id="rec-trace-title">Policy checks &amp; traces</h2>
+                        <p class="text-small" th:if="${rec.policyCitations().isEmpty()}">
+                            No policy passages were grounded for this recommendation —
+                            see <a th:href="@{/ui/cases/{id}/citations(id=${c.caseId})}">Policy citations</a>.
+                        </p>
+                        <ul style="margin:0 0 8px;padding-left:18px" th:if="${!rec.policyCitations().isEmpty()}">
+                            <li th:each="cit : ${rec.policyCitations()}">
+                                <a th:href="@{/ui/cases/{id}/citations(id=${c.caseId})}"
+                                   th:text="${cit.documentTitle()} + ' v' + ${cit.documentVersion()}">policy</a>
+                            </li>
+                        </ul>
+                        <div class="text-small">
+                            <span class="case-strip__label">Trace references</span>
+                            <div class="mono" th:each="tr : ${rec.traceIds()}" th:text="${tr}">trace</div>
+                            <span class="text-muted" th:if="${rec.traceIds().isEmpty()}">—</span>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="btn-row">
+                    <a class="btn btn--primary" th:if="${canReview}" th:href="@{/ui/cases/{id}/review(id=${c.caseId})}">Proceed to human review</a>
+                    <a class="btn btn--secondary" th:href="@{/ui/cases/{id}/evidence(id=${c.caseId})}">Inspect evidence</a>
+                </div>
+            </th:block>
+        </div>
+    </main>
+</div>
+</body>
+</html>
