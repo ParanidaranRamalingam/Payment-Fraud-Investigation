@@ -48,11 +48,26 @@ public class EvidenceItemEntity extends AssignedIdEntity {
     @Column(name = "collected_at", nullable = false)
     private Instant collectedAt;
 
+    @Column(name = "source", length = EvidenceItem.MAX_SOURCE_LENGTH)
+    private String source;
+
+    @Column(name = "content_hash", length = 64)
+    private String contentHash;
+
+    @Column(name = "payload", columnDefinition = "TEXT")
+    private String payload;
+
     protected EvidenceItemEntity() {
     }
 
     public EvidenceItemEntity(String caseId, EvidenceTool tool, ProvenanceType provenance, EvidenceStatus status,
                               String summary, String toolTraceId, Instant collectedAt) {
+        this(caseId, tool, provenance, status, summary, toolTraceId, collectedAt, null, null, null);
+    }
+
+    public EvidenceItemEntity(String caseId, EvidenceTool tool, ProvenanceType provenance, EvidenceStatus status,
+                              String summary, String toolTraceId, Instant collectedAt, String source,
+                              String contentHash, String payload) {
         super(true);
         this.caseId = Objects.requireNonNull(caseId, "caseId");
         this.tool = tool;
@@ -61,12 +76,16 @@ public class EvidenceItemEntity extends AssignedIdEntity {
         this.summary = summary;
         this.toolTraceId = toolTraceId;
         this.collectedAt = toDbPrecision(collectedAt);
+        this.source = source;
+        this.contentHash = contentHash;
+        this.payload = payload;
         toDomain();
     }
 
     /** Domain view; also re-validates invariants (e.g. tool evidence must reference a trace). */
     public EvidenceItem toDomain() {
-        return new EvidenceItem(getId(), caseId, tool, provenance, status, summary, toolTraceId, collectedAt);
+        return new EvidenceItem(getId(), caseId, tool, provenance, status, summary, toolTraceId, collectedAt,
+                source, contentHash, payload);
     }
 
     public String getCaseId() {
@@ -79,5 +98,25 @@ public class EvidenceItemEntity extends AssignedIdEntity {
 
     public EvidenceStatus getStatus() {
         return status;
+    }
+
+    public EvidenceTool getTool() {
+        return tool;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public String getContentHash() {
+        return contentHash;
+    }
+
+    public String getPayload() {
+        return payload;
     }
 }

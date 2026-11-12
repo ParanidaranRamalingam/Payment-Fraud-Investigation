@@ -24,12 +24,39 @@ class SchemaMigrationMySqlTest {
     private JdbcTemplate jdbc;
 
     @Test
-    void flyway_cleanSchema_appliesBaselineSuccessfully() {
+    void flyway_cleanSchema_appliesAllMigrationsInOrder() {
         List<Map<String, Object>> history = jdbc.queryForList(
                 "SELECT version, success FROM flyway_schema_history WHERE version IS NOT NULL ORDER BY installed_rank");
 
-        assertThat(history).extracting(r -> r.get("version")).containsExactly("1");
+        assertThat(history).extracting(r -> r.get("version")).containsExactly("1", "2");
         assertThat(history).allSatisfy(r -> assertThat(r.get("success")).isEqualTo(Boolean.TRUE));
+    }
+
+    @Test
+    void v2_evidenceProvenanceColumns_existAsNullableTextTypes() {
+        List<Map<String, Object>> columns = jdbc.queryForList("""
+                SELECT column_name AS name, data_type AS type, character_maximum_length AS len, is_nullable AS nullable
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'evidence_item'
+                  AND column_name IN ('source', 'content_hash', 'payload')
+                ORDER BY column_name""");
+
+        assertThat(columns).extracting(c -> c.get("name") + ":" + c.get("type") + ":" + c.get("nullable"))
+                .containsExactly("content_hash:varchar:YES", "payload:text:YES", "source:varchar:YES");
+    }
+
+    @Test
+    void v2_indexesAndChecks_exist() {
+        List<String> indexes = jdbc.queryForList("""
+                SELECT DISTINCT index_name FROM information_schema.statistics WHERE table_schema = DATABASE()""",
+                String.class);
+        List<String> checks = jdbc.queryForList("""
+                SELECT constraint_name FROM information_schema.table_constraints
+                WHERE table_schema = DATABASE() AND table_name = 'evidence_item' AND constraint_type = 'CHECK'""",
+                String.class);
+
+        assertThat(indexes).contains("ix_evidence_item_content_hash", "ix_tool_trace_case_tool");
+        assertThat(checks).contains("ck_evidence_item_payload_available", "ck_evidence_item_payload_pair");
     }
 
     @Test

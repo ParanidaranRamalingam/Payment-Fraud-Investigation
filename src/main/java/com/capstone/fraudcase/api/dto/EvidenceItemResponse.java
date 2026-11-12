@@ -14,10 +14,12 @@ public record EvidenceItemResponse(
         EvidenceStatus status,
         String summary,
         String toolTraceId,
-        Instant collectedAt) {
+        Instant collectedAt,
+        String source,
+        String contentHash) {
 
     public static EvidenceItemResponse from(EvidenceItem item) {
         return new EvidenceItemResponse(item.evidenceId(), item.tool(), item.provenance(), item.status(),
-                item.summary(), item.toolTraceId(), item.collectedAt());
+                item.summary(), item.toolTraceId(), item.collectedAt(), item.source(), item.contentHash());
     }
 }

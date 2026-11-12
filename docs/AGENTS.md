@@ -37,3 +37,12 @@ Run the relevant build/tests. Report what changed, tests executed/results, assum
 - MySQL CHECK violations (error 3819) surface as `UncategorizedSQLException`, not `DataIntegrityViolationException`; catch `DataAccessException`.
 - No DB triggers: the app user lacks `SUPER` with binlog enabled. Append-only audit is enforced in the application layer.
 - Entities use application-assigned UUIDs via `AssignedIdEntity` (implements `Persistable`) so `save()` does a plain INSERT.
+
+## Project facts (learned in Session 2)
+- Deterministic core: `agent/common` (`FraudCaseProcessor`, `FraudCaseContext`, `CollectedEvidence`, `RecommendationValidator`, `FallbackRecommendations`), `agent/rules/RulesFraudCaseAgent` (ordered rule table in its Javadoc, ruleset `rules-v1`), `tools/` (`ToolInvoker` = only path to tools; allow-list, timeout, structured failures), `tools/model` (typed sealed `EvidencePayload` DTOs), `tools/synthetic` (fixtures), `tools/sla`, `persistence/audit/AuditTrail` (only audit writer; redacts + bounds details), `application/InvestigationOrchestrator`.
+- Synthetic scenarios are selected by transaction-reference prefix: `txn_fraud`, `txn_dispute`, `txn_dup`, `txn_missing`, `txn_conflict`, `txn_genuine`, `txn_timeout`, `txn_unavail`, `txn_partial`; anything else is hash-derived. Fixture values depend only on identifiers + `fraud.tools.fixture-seed` (default `fraud-training-v1`), never on case ID/clock. `calculateCaseSla` depends on case `createdAt` and `asOf` by design.
+- Config: `fraud.tools.timeout` (default 2500ms), `fraud.tools.fixture-seed`. Defaults live in `ToolProperties`, not `application.yml`.
+- Evidence provenance (V2 migration): `source`, `payload` (canonical sorted `key=value` lines), `content_hash` = SHA-256 of `TOOL_NAME + "\n" + payload`; only AVAILABLE evidence may carry payload/hash (domain + DB CHECK).
+- Recommendation trace refs: `rule:<id>`, `signal:<id>` or a tool-trace UUID of the same case (validator enforces).
+- Audit rows created in the same microsecond can tie on `occurred_at`; don't assert strict audit order in tests.
+- Shared test helper: `src/test/java/.../support/SyntheticCases` builds requests/contexts without a DB. Integration test with the full stack on MySQL: `InvestigationMySqlTest` (`@MySqlRepositoryTest` + `@ComponentScan` test config).

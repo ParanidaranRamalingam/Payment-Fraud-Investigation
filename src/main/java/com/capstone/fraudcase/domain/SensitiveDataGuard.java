@@ -38,4 +38,16 @@ public final class SensitiveDataGuard {
         return value == null
                 || (!UNSAFE_CONTROL_CHARS.matcher(value).find() && !containsUnmaskedNumber(value));
     }
+
+    /**
+     * For system-generated text written to logs/audit (never for user input, which is rejected instead):
+     * replaces anything that looks like a full card/account number and drops unsafe control characters.
+     */
+    public static String redact(String value) {
+        if (value == null) {
+            return null;
+        }
+        String withoutControls = UNSAFE_CONTROL_CHARS.matcher(value).replaceAll("");
+        return UNMASKED_NUMBER.matcher(withoutControls).replaceAll("[REDACTED]");
+    }
 }
