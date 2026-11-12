@@ -18,12 +18,16 @@ import com.capstone.fraudcase.domain.EvidenceTool;
 import com.capstone.fraudcase.domain.FraudCaseRecommendation;
 import com.capstone.fraudcase.domain.ProcessorMode;
 import com.capstone.fraudcase.domain.ProvenanceType;
+import com.capstone.fraudcase.domain.Route;
 import com.capstone.fraudcase.domain.TransactionClaim;
+import com.capstone.fraudcase.knowledge.PolicyRetriever;
+import com.capstone.fraudcase.knowledge.RetrievalOutcome;
 import com.capstone.fraudcase.persistence.audit.AuditTrail;
 import com.capstone.fraudcase.persistence.entity.CaseMessageEntity;
 import com.capstone.fraudcase.persistence.entity.EvidenceItemEntity;
 import com.capstone.fraudcase.persistence.entity.FraudCaseEntity;
 import com.capstone.fraudcase.persistence.entity.PolicyCitationEntity;
+import com.capstone.fraudcase.persistence.entity.PolicyRetrievalTraceEntity;
 import com.capstone.fraudcase.persistence.entity.RecommendationEntity;
 import com.capstone.fraudcase.persistence.entity.ToolTraceEntity;
 import com.capstone.fraudcase.persistence.entity.TransactionClaimEntity;
@@ -31,6 +35,7 @@ import com.capstone.fraudcase.persistence.repository.CaseMessageRepository;
 import com.capstone.fraudcase.persistence.repository.EvidenceItemRepository;
 import com.capstone.fraudcase.persistence.repository.FraudCaseRepository;
 import com.capstone.fraudcase.persistence.repository.PolicyCitationRepository;
+import com.capstone.fraudcase.persistence.repository.PolicyRetrievalTraceRepository;
 import com.capstone.fraudcase.persistence.repository.RecommendationRepository;
 import com.capstone.fraudcase.persistence.repository.ToolTraceRepository;
 import com.capstone.fraudcase.persistence.repository.TransactionClaimRepository;
@@ -42,6 +47,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,15 +85,21 @@ public class InvestigationOrchestrator {
     private final Clock clock;
     private final CaseAssistant assistant;
     private final CaseMessageRepository messages;
+    private final PolicyRetriever policyRetriever;
+    private final PolicyRetrievalTraceRepository retrievalTraces;
 
     public InvestigationOrchestrator(FraudCaseRepository cases, TransactionClaimRepository claims,
                                      ToolTraceRepository traces, EvidenceItemRepository evidence,
                                      RecommendationRepository recommendations, PolicyCitationRepository citations,
                                      ToolInvoker toolInvoker, FraudCaseProcessor processor,
                                      RecommendationValidator validator, AuditTrail audit, Clock clock,
-                                     CaseAssistant assistant, CaseMessageRepository messages) {
+                                     CaseAssistant assistant, CaseMessageRepository messages,
+                                     PolicyRetriever policyRetriever,
+                                     PolicyRetrievalTraceRepository retrievalTraces) {
         this.assistant = assistant;
         this.messages = messages;
+        this.policyRetriever = policyRetriever;
+        this.retrievalTraces = retrievalTraces;
         this.cases = cases;
         this.claims = claims;
         this.traces = traces;
@@ -113,11 +125,15 @@ public class InvestigationOrchestrator {
         List<CollectedEvidence> collected = claim == null
                 ? List.of()
                 : collectEvidence(fraudCase, claim, correlationId);
+        RetrievalOutcome retrieval = retrievePolicies(fraudCase, claim, correlationId);
         FraudCaseContext context = new FraudCaseContext(caseId, claim, fraudCase.getCustomerStatement(), collected,
-                List.of());
+                retrieval.citations());
 
         Analysis analysis = analyze(context, correlationId);
         FraudCaseRecommendation recommendation = analysis.recommendation();
+        if (!retrieval.grounded()) {
+            recommendation = validator.validate(policyAbstention(recommendation, retrieval), context);
+        }
         RecommendationEntity saved = recommendations.save(new RecommendationEntity(recommendation));
         recommendation.policyCitations().forEach(c -> citations.save(new PolicyCitationEntity(saved.getId(), caseId, c)));
         audit.system(caseId, AuditEventType.RECOMMENDATION_RECORDED, null, null,
@@ -138,7 +154,8 @@ public class InvestigationOrchestrator {
         cases.save(fraudCase);
 
         return new InvestigationResult(caseId, fraudCase.getStatus(), saved.getId(), recommendation,
-                analysis.fallbackUsed(), collected.stream().map(CollectedEvidence::item).toList());
+                analysis.fallbackUsed(), retrieval.grounded(),
+                collected.stream().map(CollectedEvidence::item).toList());
     }
 
     /**
@@ -210,6 +227,39 @@ public class InvestigationOrchestrator {
             collected.add(new CollectedEvidence(item.toDomain(), payload));
         }
         return collected;
+    }
+
+    /**
+     * Retrieves approved, currently effective policy passages for the case and persists the retrieval trace
+     * before the processor runs. An ungrounded outcome is not an error: the recommendation is corrected to a
+     * safe {@code MANUAL_REVIEW} route and the missing policy evidence is recorded on it.
+     */
+    private RetrievalOutcome retrievePolicies(FraudCaseEntity fraudCase, TransactionClaim claim,
+                                              String correlationId) {
+        java.time.Instant created = fraudCase.getCreatedAt() == null ? clock.instant() : fraudCase.getCreatedAt();
+        RetrievalOutcome outcome = policyRetriever.retrieve(fraudCase.getId(), claim,
+                fraudCase.getCustomerStatement(), created.atOffset(ZoneOffset.UTC).toLocalDate());
+        retrievalTraces.save(new PolicyRetrievalTraceEntity(fraudCase.getId(), outcome, correlationId));
+        audit.system(fraudCase.getId(), AuditEventType.POLICY_RETRIEVED, null, null,
+                "grounded=%s citations=%d candidates=%d abstain=%s model=%s topK=%d threshold=%s".formatted(
+                        outcome.grounded(), outcome.citations().size(), outcome.candidates().size(),
+                        outcome.abstainCode(), outcome.embeddingModel(), outcome.topK(),
+                        outcome.similarityThreshold()), correlationId);
+        return outcome;
+    }
+
+    /**
+     * RAG abstention: no approved passage met the threshold, so no procedural grounding exists. The route is
+     * driven to {@code MANUAL_REVIEW} and the missing policy evidence joins the recommendation's missing
+     * information; classification, evidence and rationale are otherwise untouched. Re-validated by the caller.
+     */
+    private static FraudCaseRecommendation policyAbstention(FraudCaseRecommendation rec,
+                                                          RetrievalOutcome retrieval) {
+        List<String> missing = new ArrayList<>(rec.missingInformation());
+        missing.add(retrieval.missingPolicyDescription());
+        return new FraudCaseRecommendation(rec.caseId(), rec.classification(), rec.riskLevel(),
+                Route.MANUAL_REVIEW, rec.confidence(), true, rec.evidenceIds(), rec.policyCitations(),
+                List.copyOf(missing), rec.traceIds(), rec.rationale(), rec.processorMode());
     }
 
     private Analysis analyze(FraudCaseContext context, String correlationId) {

@@ -10,6 +10,7 @@ public record InvestigationOutcome(
         String caseId,
         CaseStatus status,
         boolean fallbackUsed,
+        boolean policyGrounded,
         RecordedRecommendation recommendation,
         List<EvidenceItem> evidence) {
 

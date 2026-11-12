@@ -14,6 +14,7 @@ import com.capstone.fraudcase.domain.FraudCaseRecommendation;
 import com.capstone.fraudcase.domain.ProcessorMode;
 import com.capstone.fraudcase.domain.ProvenanceType;
 import com.capstone.fraudcase.domain.ToolTraceStatus;
+import com.capstone.fraudcase.knowledge.PolicyRetriever;
 import com.capstone.fraudcase.persistence.audit.AuditTrail;
 import com.capstone.fraudcase.persistence.entity.AuditEventEntity;
 import com.capstone.fraudcase.persistence.entity.EvidenceItemEntity;
@@ -55,7 +56,7 @@ class InvestigationMySqlTest {
 
     @TestConfiguration(proxyBeanMethods = false)
     @ComponentScan(basePackageClasses = {InvestigationOrchestrator.class, ToolInvoker.class,
-            RulesFraudCaseAgent.class, RecommendationValidator.class, AuditTrail.class})
+            RulesFraudCaseAgent.class, RecommendationValidator.class, AuditTrail.class, PolicyRetriever.class})
     static class InvestigationComponents {
     }
 
@@ -144,7 +145,8 @@ class InvestigationMySqlTest {
                 .collect(Collectors.groupingBy(AuditEventEntity::getEventType, Collectors.counting()));
         assertThat(auditCounts).containsExactlyInAnyOrderEntriesOf(Map.of(
                 AuditEventType.STATUS_CHANGED, 2L, AuditEventType.TOOL_INVOKED, 6L,
-                AuditEventType.EVIDENCE_RECORDED, 6L, AuditEventType.RECOMMENDATION_RECORDED, 1L));
+                AuditEventType.EVIDENCE_RECORDED, 6L, AuditEventType.RECOMMENDATION_RECORDED, 1L,
+                AuditEventType.POLICY_RETRIEVED, 1L));
     }
 
     @ParameterizedTest(name = "{0} -> {2} / {3}")

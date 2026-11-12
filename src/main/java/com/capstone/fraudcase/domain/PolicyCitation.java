@@ -10,6 +10,7 @@ public record PolicyCitation(
         String documentVersion,
         LocalDate effectiveDate,
         String section,
+        String owner,
         String chunkId,
         double relevanceScore,
         String excerpt) {
@@ -20,6 +21,7 @@ public record PolicyCitation(
         required(documentVersion, "documentVersion");
         required(effectiveDate, "effectiveDate");
         required(section, "section");
+        required(owner, "owner");
         required(chunkId, "chunkId");
         required(excerpt, "excerpt");
         if (relevanceScore < 0.0 || relevanceScore > 1.0 || Double.isNaN(relevanceScore)) {

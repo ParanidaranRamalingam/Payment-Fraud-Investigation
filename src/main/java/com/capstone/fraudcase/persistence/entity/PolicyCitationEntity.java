@@ -39,6 +39,9 @@ public class PolicyCitationEntity extends AssignedIdEntity {
     @Column(name = "section", length = 120, nullable = false)
     private String section;
 
+    @Column(name = "owner", length = 120, nullable = false)
+    private String owner;
+
     @Column(name = "chunk_id", length = 64, nullable = false)
     private String chunkId;
 
@@ -63,6 +66,7 @@ public class PolicyCitationEntity extends AssignedIdEntity {
         this.documentVersion = citation.documentVersion();
         this.effectiveDate = citation.effectiveDate();
         this.section = citation.section();
+        this.owner = citation.owner();
         this.chunkId = citation.chunkId();
         this.relevanceScore = BigDecimal.valueOf(citation.relevanceScore()).setScale(4, RoundingMode.HALF_UP);
         this.excerpt = citation.excerpt();
@@ -74,8 +78,8 @@ public class PolicyCitationEntity extends AssignedIdEntity {
     }
 
     public PolicyCitation toDomain() {
-        return new PolicyCitation(documentId, documentTitle, documentVersion, effectiveDate, section, chunkId,
-                relevanceScore.doubleValue(), excerpt);
+        return new PolicyCitation(documentId, documentTitle, documentVersion, effectiveDate, section, owner,
+                chunkId, relevanceScore.doubleValue(), excerpt);
     }
 
     public String getRecommendationId() {

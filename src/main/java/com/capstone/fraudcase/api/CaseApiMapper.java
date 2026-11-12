@@ -59,8 +59,8 @@ final class CaseApiMapper {
 
     static InvestigationResponse toResponse(InvestigationOutcome o) {
         RecommendationResponse rec = toResponse(o.recommendation());
-        return new InvestigationResponse(o.caseId(), o.status(), rec.humanReviewRequired(), o.fallbackUsed(), rec,
-                o.evidence().stream().map(EvidenceItemResponse::from).toList());
+        return new InvestigationResponse(o.caseId(), o.status(), rec.humanReviewRequired(), o.fallbackUsed(),
+                o.policyGrounded(), rec, o.evidence().stream().map(EvidenceItemResponse::from).toList());
     }
 
     static CaseMessageExchangeResponse toResponse(CaseMessageExchange e) {

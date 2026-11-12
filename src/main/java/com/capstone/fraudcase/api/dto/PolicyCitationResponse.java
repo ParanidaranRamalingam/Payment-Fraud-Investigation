@@ -10,13 +10,14 @@ public record PolicyCitationResponse(
         String documentVersion,
         LocalDate effectiveDate,
         String section,
+        String owner,
         String chunkId,
         double relevanceScore,
         String excerpt) {
 
     public static PolicyCitationResponse from(PolicyCitation citation) {
         return new PolicyCitationResponse(citation.documentId(), citation.documentTitle(),
-                citation.documentVersion(), citation.effectiveDate(), citation.section(), citation.chunkId(),
-                citation.relevanceScore(), citation.excerpt());
+                citation.documentVersion(), citation.effectiveDate(), citation.section(), citation.owner(),
+                citation.chunkId(), citation.relevanceScore(), citation.excerpt());
     }
 }

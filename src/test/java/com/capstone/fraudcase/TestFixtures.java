@@ -43,7 +43,8 @@ public final class TestFixtures {
 
     public static PolicyCitation policyCitation() {
         return new PolicyCitation("POL-FRAUD-001", "Unauthorised Transaction Handling", "2.1",
-                LocalDate.of(2026, 1, 15), "4.2 Card-not-present claims", "POL-FRAUD-001#c12", 0.8731,
+                LocalDate.of(2026, 1, 15), "4.2 Card-not-present claims", "Fraud Operations",
+                "POL-FRAUD-001#c12", 0.8731,
                 "Card-not-present claims with a new device must be routed to fraud investigation.");
     }
 

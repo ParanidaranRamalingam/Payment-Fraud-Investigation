@@ -12,6 +12,9 @@ import com.capstone.fraudcase.domain.ClaimType;
 import com.capstone.fraudcase.domain.Classification;
 import com.capstone.fraudcase.domain.InvalidCaseTransitionException;
 import com.capstone.fraudcase.domain.Route;
+import com.capstone.fraudcase.knowledge.LexicalHashEmbeddingModel;
+import com.capstone.fraudcase.knowledge.PolicyProperties;
+import com.capstone.fraudcase.knowledge.PolicyRetriever;
 import com.capstone.fraudcase.persistence.audit.AuditTrail;
 import com.capstone.fraudcase.persistence.entity.EvidenceItemEntity;
 import com.capstone.fraudcase.persistence.entity.FraudCaseEntity;
@@ -23,9 +26,11 @@ import com.capstone.fraudcase.persistence.repository.CaseMessageRepository;
 import com.capstone.fraudcase.persistence.repository.EvidenceItemRepository;
 import com.capstone.fraudcase.persistence.repository.FraudCaseRepository;
 import com.capstone.fraudcase.persistence.repository.PolicyCitationRepository;
+import com.capstone.fraudcase.persistence.repository.PolicyRetrievalTraceRepository;
 import com.capstone.fraudcase.persistence.repository.RecommendationRepository;
 import com.capstone.fraudcase.persistence.repository.ToolTraceRepository;
 import com.capstone.fraudcase.persistence.repository.TransactionClaimRepository;
+import com.capstone.fraudcase.support.InMemoryVectorStore;
 import com.capstone.fraudcase.support.SyntheticCases;
 import com.capstone.fraudcase.tools.ToolInvoker;
 import org.junit.jupiter.api.AfterEach;
@@ -91,9 +96,12 @@ class InvestigationOrchestratorTest {
     }
 
     private InvestigationOrchestrator orchestrator(FraudCaseProcessor processor) {
+        PolicyRetriever retriever = new PolicyRetriever(new InMemoryVectorStore(),
+                new LexicalHashEmbeddingModel(), new PolicyProperties(4, 0.72, 800, 64, false));
         return new InvestigationOrchestrator(cases, claims, traces, evidence, recommendations, citations, toolInvoker,
                 processor, new RecommendationValidator(), new AuditTrail(auditRepository), SyntheticCases.FIXED_CLOCK,
-                new RulesCaseAssistant(), mock(CaseMessageRepository.class));
+                new RulesCaseAssistant(), mock(CaseMessageRepository.class), retriever,
+                mock(PolicyRetrievalTraceRepository.class));
     }
 
     private void withClaim(String reference, ClaimType type) {

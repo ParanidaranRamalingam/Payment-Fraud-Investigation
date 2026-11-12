@@ -79,7 +79,7 @@ class DomainRecordsTest {
     @ValueSource(doubles = {-0.01, 1.01, Double.NaN})
     void policyCitation_scoreOutsideRange_throws(double score) {
         assertThatThrownBy(() -> new PolicyCitation("POL-1", "Title", "1.0", LocalDate.of(2026, 1, 1), "1.1",
-                "POL-1#c1", score, "excerpt"))
+                "owner-1", "POL-1#c1", score, "excerpt"))
                 .isInstanceOf(DomainValidationException.class)
                 .hasMessageContaining("relevanceScore");
     }
@@ -87,7 +87,7 @@ class DomainRecordsTest {
     @Test
     void policyCitation_missingVersion_throws() {
         assertThatThrownBy(() -> new PolicyCitation("POL-1", "Title", null, LocalDate.of(2026, 1, 1), "1.1",
-                "POL-1#c1", 0.5, "excerpt"))
+                "owner-1", "POL-1#c1", 0.5, "excerpt"))
                 .isInstanceOf(DomainValidationException.class)
                 .hasMessageContaining("documentVersion");
     }

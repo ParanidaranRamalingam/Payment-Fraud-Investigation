@@ -19,7 +19,8 @@ class SchemaMigrationMySqlTest {
     private static final List<String> DOMAIN_TABLES = List.of("fraud_case", "transaction_claim", "tool_trace",
             "evidence_item", "recommendation", "recommendation_evidence", "recommendation_missing_info",
             "recommendation_trace_ref", "policy_citation", "review_disposition", "audit_event", "case_message",
-            "case_message_evidence");
+            "case_message_evidence", "policy_document", "policy_chunk", "policy_retrieval_trace",
+            "policy_retrieval_hit");
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -29,7 +30,7 @@ class SchemaMigrationMySqlTest {
         List<Map<String, Object>> history = jdbc.queryForList(
                 "SELECT version, success FROM flyway_schema_history WHERE version IS NOT NULL ORDER BY installed_rank");
 
-        assertThat(history).extracting(r -> r.get("version")).containsExactly("1", "2", "3");
+        assertThat(history).extracting(r -> r.get("version")).containsExactly("1", "2", "3", "4");
         assertThat(history).allSatisfy(r -> assertThat(r.get("success")).isEqualTo(Boolean.TRUE));
     }
 
@@ -138,7 +139,10 @@ class SchemaMigrationMySqlTest {
                 "case_message.case_id->fraud_case",
                 "case_message.reply_to_id->case_message",
                 "case_message_evidence.message_id->case_message",
-                "case_message_evidence.evidence_item_id->evidence_item");
+                "case_message_evidence.evidence_item_id->evidence_item",
+                "policy_chunk.document_row_id->policy_document",
+                "policy_retrieval_trace.case_id->fraud_case",
+                "policy_retrieval_hit.trace_id->policy_retrieval_trace");
     }
 
     @Test

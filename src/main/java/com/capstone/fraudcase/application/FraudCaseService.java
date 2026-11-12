@@ -105,7 +105,7 @@ public class FraudCaseService {
         InvestigationResult result = orchestrator.investigate(caseId, analystId, correlationId);
         RecommendationEntity saved = recommendations.findById(result.recommendationId())
                 .orElseThrow(() -> new IllegalStateException("recorded recommendation not found"));
-        return new InvestigationOutcome(caseId, result.status(), result.fallbackUsed(),
+        return new InvestigationOutcome(caseId, result.status(), result.fallbackUsed(), result.policyGrounded(),
                 new RecordedRecommendation(saved.getId(), result.recommendation(), saved.getCreatedAt()),
                 result.evidence());
     }
