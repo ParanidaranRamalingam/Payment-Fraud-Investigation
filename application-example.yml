@@ -1,0 +1,22 @@
+# EXAMPLE ONLY - copy values into environment variables; do not commit real credentials.
+#
+#   export DB_URL='jdbc:mysql://<vm-host>:3306/fraud_capstone?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC'
+#   export DB_USERNAME='fraud_app'
+#   export DB_PASSWORD='<supplied-by-operator>'
+#
+# Optional:
+#   DB_POOL_SIZE        (default 10)
+#   SERVER_PORT         (default 8080)
+#   HEALTH_SHOW_DETAILS (never | when_authorized | always; default never)
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/fraud_capstone?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC}
+    username: ${DB_USERNAME:fraud_app}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true

@@ -1,0 +1,9 @@
+# MySQL test profile. Points at a DEDICATED test schema (never the runtime schema) because
+# the MySQL tests clean and re-migrate it from scratch. Credentials come from the environment.
+spring:
+  datasource:
+    url: ${DB_TEST_URL:jdbc:mysql://localhost:3306/fraud_capstone_test?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:fraud_app}
+    password: ${DB_PASSWORD:}
+  flyway:
+    clean-disabled: false

@@ -1,0 +1,19 @@
+target/
+*.class
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# Local secrets / environment (never commit DB credentials)
+.env
+.env.*
+*.env
+application-local.yml
+application-local.properties
+src/main/resources/application-local.*

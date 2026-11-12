@@ -1,0 +1,72 @@
+# Runtime configuration. Database credentials are ALWAYS supplied externally via
+# DB_URL / DB_USERNAME / DB_PASSWORD. No secret is stored in this file.
+spring:
+  application:
+    name: payment-fraud-investigation
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/fraud_capstone?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:fraud_app}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: fraud-hikari
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      connection-timeout: 10000
+  jpa:
+    open-in-view: false
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        type:
+          preferred_instant_jdbc_type: TIMESTAMP
+        query:
+          immutable_entity_update_query_handling_mode: exception
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true
+    baseline-on-migrate: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: ${HEALTH_SHOW_DETAILS:never}
+      show-components: always
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db,schemaMigrations
+        liveness:
+          include: livenessState
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: Payment Fraud Investigation & Dispute Resolution
+    advisory-only: true
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN
