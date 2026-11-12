@@ -71,6 +71,11 @@ public class CaseUiController {
         return "redirect:/ui";
     }
 
+    @GetMapping("/login")
+    public String login(Principal principal) {
+        return principal == null ? "login" : "redirect:/ui";
+    }
+
     @GetMapping("/ui")
     public String dashboard(Model model) {
         List<CaseView> cases = service.listCases();

@@ -10,6 +10,9 @@ spring:
 
 # Test-only analyst accounts (bcrypt of throwaway passwords; never usable outside the test suite).
 fraud:
+  # Tests stay deterministic: rules processor only, no live model calls.
+  ai:
+    enabled: false
   security:
     accounts:
       - username: it-analyst

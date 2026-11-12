@@ -37,7 +37,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * state-machine enforcement, transactional persistence and the audit trail. Same gating as
  * {@code @MySqlRepositoryTest}: skipped unless {@code DB_TEST_URL} points at a {@code *_test} schema.
  */
-@SpringBootTest
+// Inlined properties take precedence over OS environment variables: the operator env file used for
+// the real run (FRAUD_SECURITY_ACCOUNTS_*) must not silently replace these throwaway test accounts.
+@SpringBootTest(properties = {
+        "fraud.security.accounts[0].username=it-analyst",
+        "fraud.security.accounts[0].password={bcrypt}$2b$10$Td3EKktJ8NAXMiDcNNg3DevWjnw53T8S0FmdTWJ.XdfQOn640A1WW",
+        "fraud.security.accounts[0].roles[0]=ANALYST",
+        "fraud.security.accounts[1].username=it-reviewer",
+        "fraud.security.accounts[1].password={bcrypt}$2b$10$8poTtXkRF1Lx6hf3SRjJUeWLhgXxritGKdEIuQpJdPEY2K7foLm8a",
+        "fraud.security.accounts[1].roles[0]=REVIEWER",
+        "fraud.security.accounts[2].username=it-lead",
+        "fraud.security.accounts[2].password={bcrypt}$2b$10$Td3EKktJ8NAXMiDcNNg3DevWjnw53T8S0FmdTWJ.XdfQOn640A1WW",
+        "fraud.security.accounts[2].roles[0]=ANALYST",
+        "fraud.security.accounts[2].roles[1]=REVIEWER"})
 @AutoConfigureMockMvc
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")

@@ -108,7 +108,7 @@
                     <section class="card" aria-labelledby="gaps-title">
                         <h2 class="card__title" id="gaps-title">Missing / unresolved</h2>
                         <div th:if="${unavailableEvidence.isEmpty() and (recommendation == null or recommendation.recommendation().missingInformation().isEmpty())}">
-                            <th:block th:replace="~{fragments/components :: emptyState('&#9989;', 'No gaps recorded',
+                            <th:block th:replace="~{fragments/components :: emptyState('&#10003;', 'No gaps recorded',
                                 'No unavailable evidence or missing information has been recorded.')}"/>
                         </div>
                         <ul style="margin:0;padding-left:18px;font-size:.86rem" th:if="${!unavailableEvidence.isEmpty()}">

@@ -87,7 +87,7 @@
 
 <!-- Empty state. -->
 <div class="empty-state" th:fragment="emptyState(icon, title, text)">
-    <div class="empty-state__icon" aria-hidden="true" th:text="${icon}">&#128196;</div>
+    <div class="empty-state__icon" aria-hidden="true" th:text="${icon}">&#9700;</div>
     <div class="empty-state__title" th:text="${title}">Nothing here</div>
     <p class="empty-state__text" th:text="${text}">No data is available yet.</p>
 </div>
@@ -110,7 +110,7 @@
         <span th:text="${messageCount}">0</span> stored messages for this case and can cite only its own evidence.</p>
 
     <div th:if="${#lists.isEmpty(messages)}">
-        <th:block th:replace="~{fragments/components :: emptyState('&#128172;', 'No messages yet',
+        <th:block th:replace="~{fragments/components :: emptyState('&#9993;', 'No messages yet',
             'Ask about the status, evidence, recommendation or policy citations of this case. Replies are advisory and validated before being recorded.')}"/>
     </div>
     <div th:each="m : ${messages}" class="message"
@@ -141,7 +141,7 @@
     <h2 class="section-title" id="audit-title">Audit trail</h2>
     <p class="section-sub">Append-only record of every state change, tool call, recommendation and review.</p>
     <div th:if="${#lists.isEmpty(audit)}">
-        <th:block th:replace="~{fragments/components :: emptyState('&#128393;', 'No audit events', 'No events have been recorded for this case yet.')}"/>
+        <th:block th:replace="~{fragments/components :: emptyState('&#9776;', 'No audit events', 'No events have been recorded for this case yet.')}"/>
     </div>
     <ol class="timeline" th:if="${!#lists.isEmpty(audit)}">
         <li class="timeline__item" th:each="e : ${audit}"

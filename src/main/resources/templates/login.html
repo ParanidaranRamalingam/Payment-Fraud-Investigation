@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Sign in')}"></head>
+<body class="login-page">
+<main class="login-main" id="main">
+    <div class="login-card card card--raised">
+        <div class="login-brand">
+            <span class="app-header__logo" aria-hidden="true">&#9670;</span>
+            <span>Fraud Operations</span>
+        </div>
+        <h1 class="login-title">Sign in</h1>
+        <p class="page-sub">Analyst and reviewer workspace. Every recommendation is advisory and
+            requires human review.</p>
+
+        <div class="alert alert--danger" th:if="${param.error != null}" role="alert">
+            <span class="alert__icon" aria-hidden="true">!</span>
+            <span>Invalid username or password.</span>
+        </div>
+        <div class="alert alert--ok" th:if="${param.logout != null}" role="status">
+            <span class="alert__icon" aria-hidden="true">&#10003;</span>
+            <span>You have been signed out.</span>
+        </div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="field">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" autocomplete="username" required
+                       autofocus>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="current-password"
+                       required>
+            </div>
+            <button class="btn btn--primary btn--block" type="submit" data-loading
+                    data-loading-label="Signing in…">Sign in</button>
+        </form>
+        <p class="login-foot text-muted text-small">Synthetic training data only — never submit real
+            customer data.</p>
+    </div>
+</main>
+</body>
+</html>

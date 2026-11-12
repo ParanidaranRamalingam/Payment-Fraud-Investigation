@@ -16,6 +16,13 @@
 #   DB_POOL_SIZE        (default 10)
 #   SERVER_PORT         (default 8080)
 #   HEALTH_SHOW_DETAILS (never | when_authorized | always; default never)
+#
+# AI mode (Anthropic). Defaults are rules-only; enabling AI without a key still boots and every
+# model failure degrades to a safe manual-review recommendation.
+#   export FRAUD_AI_ENABLED='true'
+#   export FRAUD_AI_API_KEY='<anthropic-key>'
+#   export FRAUD_AI_MODEL='global.anthropic.claude-sonnet-4-6'   # optional
+#   export FRAUD_AI_TIMEOUT='15s'               # optional
 spring:
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/fraud_capstone?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC}

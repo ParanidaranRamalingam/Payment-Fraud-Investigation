@@ -17,7 +17,7 @@
 <body>
 <header class="app-header" th:fragment="header">
     <a class="app-header__brand" th:href="@{/ui}">
-        <span class="app-header__logo" aria-hidden="true">&#128737;</span>
+        <span class="app-header__logo" aria-hidden="true">&#9670;</span>
         <span>Fraud Operations</span>
     </a>
     <div class="app-header__meta">
@@ -26,9 +26,12 @@
             <span class="visually-hidden">Service status:</span><a th:href="@{/actuator/health}" style="color:inherit;text-decoration:none">Healthy</a>
         </span>
         <span class="user-chip" th:if="${actor != null}">
-            <span aria-hidden="true">&#128100;</span>
+            <span aria-hidden="true">&#9679;</span>
             <span th:text="${actor}">analyst</span>
         </span>
+        <form th:if="${actor != null}" th:action="@{/logout}" method="post" style="margin:0">
+            <button class="logout-btn" type="submit">Sign out</button>
+        </form>
     </div>
 </header>
 </body>
@@ -37,28 +40,28 @@
 <nav class="app-nav" th:fragment="nav(active)" aria-label="Primary">
     <ul>
         <li><a th:href="@{/ui}" th:attr="aria-current=${active == 'cases' ? 'page' : null}">
-            <span class="nav-icon" aria-hidden="true">&#128203;</span>Cases</a></li>
+            <span class="nav-icon" aria-hidden="true">&#9700;</span>Cases</a></li>
         <li><a th:href="@{/ui/cases/new}" th:attr="aria-current=${active == 'new' ? 'page' : null}">
-            <span class="nav-icon" aria-hidden="true">&#10133;</span>New Case</a></li>
+            <span class="nav-icon" aria-hidden="true">+</span>New Case</a></li>
     </ul>
     <th:block th:if="${c != null}">
         <div class="app-nav__section">Current case</div>
         <ul>
             <li><a th:href="@{/ui/cases/{id}(id=${c.caseId})}"
                    th:attr="aria-current=${active == 'investigation' ? 'page' : null}">
-                <span class="nav-icon" aria-hidden="true">&#128269;</span>Investigation</a></li>
+                <span class="nav-icon" aria-hidden="true">&#9673;</span>Investigation</a></li>
             <li><a th:href="@{/ui/cases/{id}/recommendation(id=${c.caseId})}"
                    th:attr="aria-current=${active == 'recommendation' ? 'page' : null}">
-                <span class="nav-icon" aria-hidden="true">&#128161;</span>Recommendation</a></li>
+                <span class="nav-icon" aria-hidden="true">&#9733;</span>Recommendation</a></li>
             <li><a th:href="@{/ui/cases/{id}/evidence(id=${c.caseId})}"
                    th:attr="aria-current=${active == 'evidence' ? 'page' : null}">
-                <span class="nav-icon" aria-hidden="true">&#128462;</span>Evidence</a></li>
+                <span class="nav-icon" aria-hidden="true">&#9635;</span>Evidence</a></li>
             <li><a th:href="@{/ui/cases/{id}/citations(id=${c.caseId})}"
                    th:attr="aria-current=${active == 'citations' ? 'page' : null}">
-                <span class="nav-icon" aria-hidden="true">&#128214;</span>Policy</a></li>
+                <span class="nav-icon" aria-hidden="true">&#167;</span>Policy</a></li>
             <li><a th:href="@{/ui/cases/{id}/review(id=${c.caseId})}"
                    th:attr="aria-current=${active == 'review' ? 'page' : null}">
-                <span class="nav-icon" aria-hidden="true">&#128221;</span>Review &amp; Audit</a></li>
+                <span class="nav-icon" aria-hidden="true">&#9998;</span>Review &amp; Audit</a></li>
         </ul>
     </th:block>
 </nav>

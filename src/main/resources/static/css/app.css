@@ -340,8 +340,8 @@ body {
 .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: var(--sp-2); }
 .field label { font-size: .82rem; font-weight: 600; color: var(--ink-soft); }
 .field .hint { font-size: .76rem; color: var(--faint); }
-.field input[type="text"], .field input[type="number"], .field input[type="datetime-local"],
-.field select, .field textarea {
+.field input[type="text"], .field input[type="password"], .field input[type="number"],
+.field input[type="datetime-local"], .field select, .field textarea {
     font: inherit;
     font-size: .92rem;
     padding: 9px 12px;
@@ -661,6 +661,26 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
     .btn-row .btn { width: auto; flex: 1 1 auto; }
     .form-actions .btn { flex: 1 1 auto; }
 }
+
+/* ---------- login ---------- */
+
+.login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(160deg, #10233f 0%, #16345c 55%, var(--canvas) 55.2%, var(--canvas) 100%); }
+.login-main { width: 100%; max-width: 400px; padding: var(--sp-3); }
+.login-card { padding: var(--sp-4); }
+.login-brand { display: flex; align-items: center; gap: var(--sp-1); font-weight: 650; font-size: 1.05rem;
+    color: var(--ink); margin-bottom: var(--sp-2); }
+.login-title { margin: 0 0 4px; font-size: 1.35rem; font-weight: 680; }
+.login-foot { margin: var(--sp-3) 0 0; text-align: center; }
+.btn--block { width: 100%; }
+.logout-btn {
+    font: inherit; font-size: .8rem; font-weight: 600;
+    background: transparent; color: #b9c6da;
+    border: 1px solid #33507a; border-radius: 999px;
+    padding: 4px 12px; cursor: pointer;
+    transition: background .18s ease, color .18s ease;
+}
+.logout-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
 
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }

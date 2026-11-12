@@ -37,6 +37,10 @@ On Ubuntu with `sudo`, this can be run via `sudo mysql --defaults-file=/etc/mysq
 | `FRAUD_SECURITY_ACCOUNTS_<n>_USERNAME` | Analyst login (HTTP Basic) | *(unset → API refuses all calls)* |
 | `FRAUD_SECURITY_ACCOUNTS_<n>_PASSWORD` | `{bcrypt}` password hash, never plain text | — |
 | `FRAUD_SECURITY_ACCOUNTS_<n>_ROLES` | `ANALYST` and/or `REVIEWER` | — |
+| `FRAUD_AI_ENABLED` | `true` uses the Anthropic model; `false` = deterministic rules only | `false` |
+| `FRAUD_AI_API_KEY` | Anthropic API key — env only, never committed | *(empty)* |
+| `FRAUD_AI_MODEL` | Anthropic model name | `global.anthropic.claude-sonnet-4-6` |
+| `FRAUD_AI_TIMEOUT`, `FRAUD_AI_MAX_TOKENS` | Model call budget / output cap | `15s`, `2000` |
 
 Keep these in a private file outside the repo, for example `~/.config/fraud-capstone/db.env` (mode `600`):
 

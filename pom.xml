@@ -73,11 +73,16 @@
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- AI adapter only: model-agnostic ChatClient/ChatModel API. No provider starter is added;
-             a ChatModel bean is optional and only used when fraud.ai.enabled=true. -->
+        <!-- AI adapter: model-agnostic ChatClient/ChatModel API plus the Anthropic provider starter,
+             which auto-configures a ChatModel from spring.ai.anthropic.*. A ChatModel bean is optional
+             and only used when fraud.ai.enabled=true; absent/invalid config degrades to manual review. -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-client-chat</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-anthropic</artifactId>
         </dependency>
 
         <dependency>

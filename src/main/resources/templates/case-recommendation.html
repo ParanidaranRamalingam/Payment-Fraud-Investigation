@@ -28,7 +28,7 @@
             </div>
 
             <div th:if="${recommendation == null}" class="card">
-                <th:block th:replace="~{fragments/components :: emptyState('&#128161;', 'No recommendation yet',
+                <th:block th:replace="~{fragments/components :: emptyState('&#9733;', 'No recommendation yet',
                     'Run the bounded investigation to collect evidence and produce a validated advisory recommendation.')}"/>
                 <form th:if="${canInvestigate}" th:action="@{/ui/cases/{id}/investigate(id=${c.caseId})}" method="post" style="text-align:center">
                     <button class="btn btn--primary" type="submit" data-loading
@@ -80,7 +80,7 @@
                     <section class="card" aria-labelledby="missing-title">
                         <h2 class="card__title" id="missing-title">Missing / contradictory information</h2>
                         <div th:if="${rec.missingInformation().isEmpty()}">
-                            <th:block th:replace="~{fragments/components :: emptyState('&#9989;', 'None recorded',
+                            <th:block th:replace="~{fragments/components :: emptyState('&#10003;', 'None recorded',
                                 'The recommendation lists no missing or contradictory information.')}"/>
                         </div>
                         <ul style="margin:0;padding-left:18px" th:if="${!rec.missingInformation().isEmpty()}">

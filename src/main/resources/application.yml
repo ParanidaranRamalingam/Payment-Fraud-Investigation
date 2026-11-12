@@ -35,6 +35,26 @@ spring:
     validate-on-migrate: true
     clean-disabled: true
     baseline-on-migrate: false
+  ai:
+    anthropic:
+      # Anthropic ChatModel provider (Tekstac LLM gateway). The API key comes from the
+      # environment — never commit it.
+      base-url: ${FRAUD_AI_BASE_URL:https://llmgw-wp.tekstac.com}
+      api-key: ${FRAUD_AI_API_KEY:}
+      chat:
+        options:
+          model: ${FRAUD_AI_MODEL:global.anthropic.claude-sonnet-4-6}
+          max-tokens: ${FRAUD_AI_MAX_TOKENS:2048}
+          temperature: ${FRAUD_AI_TEMPERATURE:0.7}
+
+fraud:
+  ai:
+    # When true the Anthropic ChatModel above produces the advisory assessment after the
+    # deterministic tools and policy retrieval have run; when false (default) the rules processor
+    # is the only FraudCaseProcessor. Any model failure falls back to a safe manual-review
+    # recommendation.
+    enabled: ${FRAUD_AI_ENABLED:false}
+    timeout: ${FRAUD_AI_TIMEOUT:15s}
 
 server:
   port: ${SERVER_PORT:8080}

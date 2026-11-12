@@ -59,7 +59,7 @@
             </div>
 
             <div class="card" th:if="${#lists.isEmpty(cases)}">
-                <th:block th:replace="~{fragments/components :: emptyState('&#128203;', 'No cases yet',
+                <th:block th:replace="~{fragments/components :: emptyState('&#9700;', 'No cases yet',
                     'Create a case from a customer dispute to start a bounded investigation. Only synthetic, masked data is accepted.')}"/>
                 <div style="text-align:center"><a class="btn btn--primary" th:href="@{/ui/cases/new}">Create the first case</a></div>
             </div>
