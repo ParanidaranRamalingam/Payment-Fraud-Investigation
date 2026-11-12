@@ -1,6 +1,7 @@
 package com.capstone.fraudcase.persistence.entity;
 
 import com.capstone.fraudcase.domain.EvidenceTool;
+import com.capstone.fraudcase.domain.ToolTrace;
 import com.capstone.fraudcase.domain.ToolTraceStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -72,6 +73,11 @@ public class ToolTraceEntity extends AssignedIdEntity {
         this.errorCode = errorCode;
         this.completedAt = toDbPrecision(Objects.requireNonNull(completedAt, "completedAt"));
         this.durationMs = Math.max(0, Duration.between(startedAt, this.completedAt).toMillis());
+    }
+
+    public ToolTrace toDomain() {
+        return new ToolTrace(getId(), caseId, tool, status, requestSummary, resultSummary, errorCode, correlationId,
+                startedAt, completedAt, durationMs);
     }
 
     public String getCaseId() {

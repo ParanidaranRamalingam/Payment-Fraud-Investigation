@@ -25,6 +25,10 @@ spring:
           preferred_instant_jdbc_type: TIMESTAMP
         query:
           immutable_entity_update_query_handling_mode: exception
+  jackson:
+    deserialization:
+      # Reject unexpected fields (e.g. a client-supplied caseId/analystId or a raw card number field).
+      fail-on-unknown-properties: true
   flyway:
     enabled: true
     locations: classpath:db/migration

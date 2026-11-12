@@ -34,6 +34,9 @@ On Ubuntu with `sudo`, this can be run via `sudo mysql --defaults-file=/etc/mysq
 | `DB_PASSWORD` | DB password | *(empty)* |
 | `DB_TEST_URL` | JDBC URL of the **test** schema; enables MySQL tests | *(unset → MySQL tests skipped)* |
 | `DB_POOL_SIZE`, `SERVER_PORT`, `HEALTH_SHOW_DETAILS` | Optional tuning | `10`, `8080`, `never` |
+| `FRAUD_SECURITY_ACCOUNTS_<n>_USERNAME` | Analyst login (HTTP Basic) | *(unset → API refuses all calls)* |
+| `FRAUD_SECURITY_ACCOUNTS_<n>_PASSWORD` | `{bcrypt}` password hash, never plain text | — |
+| `FRAUD_SECURITY_ACCOUNTS_<n>_ROLES` | `ANALYST` and/or `REVIEWER` | — |
 
 Keep these in a private file outside the repo, for example `~/.config/fraud-capstone/db.env` (mode `600`):
 
@@ -46,6 +49,10 @@ export DB_PASSWORD='...'
 
 See `application-example.yml` for the shape of the configuration. `spring.jpa.hibernate.ddl-auto` is `validate`:
 the schema is owned exclusively by Flyway migrations in `src/main/resources/db/migration`.
+
+The REST API uses stateless HTTP Basic auth: `ANALYST` creates/investigates/messages cases, `REVIEWER` submits the
+mandatory review disposition, both may read. Passwords must be `{bcrypt}` hashes (e.g. produced by
+`htpasswd -nbBC 10 user pass` or Spring's `BCryptPasswordEncoder`).
 
 ## 3. Build, test, run
 

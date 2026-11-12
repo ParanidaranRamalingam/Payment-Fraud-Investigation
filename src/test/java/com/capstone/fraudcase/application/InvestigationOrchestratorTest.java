@@ -4,6 +4,7 @@ import com.capstone.fraudcase.TestFixtures;
 import com.capstone.fraudcase.agent.common.FraudCaseContext;
 import com.capstone.fraudcase.agent.common.FraudCaseProcessor;
 import com.capstone.fraudcase.agent.common.RecommendationValidator;
+import com.capstone.fraudcase.agent.rules.RulesCaseAssistant;
 import com.capstone.fraudcase.agent.rules.RulesFraudCaseAgent;
 import com.capstone.fraudcase.domain.AuditEventType;
 import com.capstone.fraudcase.domain.CaseStatus;
@@ -18,6 +19,7 @@ import com.capstone.fraudcase.persistence.entity.RecommendationEntity;
 import com.capstone.fraudcase.persistence.entity.ToolTraceEntity;
 import com.capstone.fraudcase.persistence.entity.TransactionClaimEntity;
 import com.capstone.fraudcase.persistence.repository.AuditEventRepository;
+import com.capstone.fraudcase.persistence.repository.CaseMessageRepository;
 import com.capstone.fraudcase.persistence.repository.EvidenceItemRepository;
 import com.capstone.fraudcase.persistence.repository.FraudCaseRepository;
 import com.capstone.fraudcase.persistence.repository.PolicyCitationRepository;
@@ -90,7 +92,8 @@ class InvestigationOrchestratorTest {
 
     private InvestigationOrchestrator orchestrator(FraudCaseProcessor processor) {
         return new InvestigationOrchestrator(cases, claims, traces, evidence, recommendations, citations, toolInvoker,
-                processor, new RecommendationValidator(), new AuditTrail(auditRepository), SyntheticCases.FIXED_CLOCK);
+                processor, new RecommendationValidator(), new AuditTrail(auditRepository), SyntheticCases.FIXED_CLOCK,
+                new RulesCaseAssistant(), mock(CaseMessageRepository.class));
     }
 
     private void withClaim(String reference, ClaimType type) {

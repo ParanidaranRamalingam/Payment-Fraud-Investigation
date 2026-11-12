@@ -7,3 +7,17 @@ spring:
     password: ${DB_PASSWORD:}
   flyway:
     clean-disabled: false
+
+# Test-only analyst accounts (bcrypt of throwaway passwords; never usable outside the test suite).
+fraud:
+  security:
+    accounts:
+      - username: it-analyst
+        password: "{bcrypt}$2b$10$Td3EKktJ8NAXMiDcNNg3DevWjnw53T8S0FmdTWJ.XdfQOn640A1WW"
+        roles: [ ANALYST ]
+      - username: it-reviewer
+        password: "{bcrypt}$2b$10$8poTtXkRF1Lx6hf3SRjJUeWLhgXxritGKdEIuQpJdPEY2K7foLm8a"
+        roles: [ REVIEWER ]
+      - username: it-lead
+        password: "{bcrypt}$2b$10$Td3EKktJ8NAXMiDcNNg3DevWjnw53T8S0FmdTWJ.XdfQOn640A1WW"
+        roles: [ ANALYST, REVIEWER ]

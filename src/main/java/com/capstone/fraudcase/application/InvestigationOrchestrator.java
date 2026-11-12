@@ -1,5 +1,8 @@
 package com.capstone.fraudcase.application;
 
+import com.capstone.fraudcase.agent.common.CaseAssistant;
+import com.capstone.fraudcase.agent.common.CaseAssistantReply;
+import com.capstone.fraudcase.agent.common.CaseMessageContext;
 import com.capstone.fraudcase.agent.common.CollectedEvidence;
 import com.capstone.fraudcase.agent.common.FallbackRecommendations;
 import com.capstone.fraudcase.agent.common.FraudCaseContext;
@@ -10,17 +13,21 @@ import com.capstone.fraudcase.domain.AuditEventType;
 import com.capstone.fraudcase.domain.CaseStatus;
 import com.capstone.fraudcase.domain.Classification;
 import com.capstone.fraudcase.domain.DomainValidationException;
+import com.capstone.fraudcase.domain.EvidenceItem;
 import com.capstone.fraudcase.domain.EvidenceTool;
 import com.capstone.fraudcase.domain.FraudCaseRecommendation;
+import com.capstone.fraudcase.domain.ProcessorMode;
 import com.capstone.fraudcase.domain.ProvenanceType;
 import com.capstone.fraudcase.domain.TransactionClaim;
 import com.capstone.fraudcase.persistence.audit.AuditTrail;
+import com.capstone.fraudcase.persistence.entity.CaseMessageEntity;
 import com.capstone.fraudcase.persistence.entity.EvidenceItemEntity;
 import com.capstone.fraudcase.persistence.entity.FraudCaseEntity;
 import com.capstone.fraudcase.persistence.entity.PolicyCitationEntity;
 import com.capstone.fraudcase.persistence.entity.RecommendationEntity;
 import com.capstone.fraudcase.persistence.entity.ToolTraceEntity;
 import com.capstone.fraudcase.persistence.entity.TransactionClaimEntity;
+import com.capstone.fraudcase.persistence.repository.CaseMessageRepository;
 import com.capstone.fraudcase.persistence.repository.EvidenceItemRepository;
 import com.capstone.fraudcase.persistence.repository.FraudCaseRepository;
 import com.capstone.fraudcase.persistence.repository.PolicyCitationRepository;
@@ -44,9 +51,15 @@ import java.util.List;
  * {@code READY_FOR_REVIEW} or {@code INCOMPLETE}. Every step writes an append-only audit event. State transitions
  * are decided here from deterministic facts, never from processor output. The whole run is one transaction and
  * is protected by the case's optimistic-lock version.
+ *
+ * <p>It is also the only path to the {@link CaseAssistant}: {@link #respond} answers an analyst message from the
+ * case's own persisted facts, validates the reply and records both in the case's conversation memory.
  */
 @Service
 public class InvestigationOrchestrator {
+
+    static final String FALLBACK_REPLY = "The assistant could not produce a validated answer for this message. "
+            + "No facts were inferred; review the case evidence and recommendation directly.";
 
     /** Bounded, ordered investigation plan; only allow-listed tools. */
     public static final List<EvidenceTool> EVIDENCE_PLAN = List.of(
@@ -64,12 +77,17 @@ public class InvestigationOrchestrator {
     private final RecommendationValidator validator;
     private final AuditTrail audit;
     private final Clock clock;
+    private final CaseAssistant assistant;
+    private final CaseMessageRepository messages;
 
     public InvestigationOrchestrator(FraudCaseRepository cases, TransactionClaimRepository claims,
                                      ToolTraceRepository traces, EvidenceItemRepository evidence,
                                      RecommendationRepository recommendations, PolicyCitationRepository citations,
                                      ToolInvoker toolInvoker, FraudCaseProcessor processor,
-                                     RecommendationValidator validator, AuditTrail audit, Clock clock) {
+                                     RecommendationValidator validator, AuditTrail audit, Clock clock,
+                                     CaseAssistant assistant, CaseMessageRepository messages) {
+        this.assistant = assistant;
+        this.messages = messages;
         this.cases = cases;
         this.claims = claims;
         this.traces = traces;
@@ -121,6 +139,47 @@ public class InvestigationOrchestrator {
 
         return new InvestigationResult(caseId, fraudCase.getStatus(), saved.getId(), recommendation,
                 analysis.fallbackUsed(), collected.stream().map(CollectedEvidence::item).toList());
+    }
+
+    /**
+     * Answers one analyst message. The assistant sees only this case's persisted evidence and latest
+     * recommendation; the message is stored as data and never alters case state. A reply that fails validation
+     * is replaced by a fixed safe reply. Closed cases accept no further messages.
+     */
+    @Transactional
+    public CaseMessageExchange respond(String caseId, String message, String actorId, String correlationId) {
+        FraudCaseEntity fraudCase = cases.findById(caseId).orElseThrow(() -> new CaseNotFoundException(caseId));
+        if (fraudCase.getStatus().isTerminal()) {
+            throw new CaseConflictException("Case is closed; no further messages can be added");
+        }
+        List<EvidenceItem> caseEvidence = evidence.findByCaseIdOrderByCollectedAtAsc(caseId).stream()
+                .map(EvidenceItemEntity::toDomain).toList();
+        FraudCaseRecommendation latest = recommendations.findFirstByCaseIdOrderByCreatedAtDesc(caseId)
+                .map(r -> r.toDomain(citations.findByRecommendationIdOrderByRelevanceScoreDesc(r.getId()).stream()
+                        .map(PolicyCitationEntity::toDomain).toList()))
+                .orElse(null);
+        CaseMessageContext context = new CaseMessageContext(caseId, fraudCase.getStatus(), caseEvidence, latest,
+                message);
+        CaseMessageEntity question = messages.save(CaseMessageEntity.analystMessage(caseId, actorId, message,
+                clock.instant()));
+
+        CaseAssistantReply reply;
+        boolean fallbackUsed = false;
+        try {
+            reply = validator.validateReply(assistant.reply(context), context);
+        } catch (RuntimeException e) {
+            fallbackUsed = true;
+            audit.system(caseId, AuditEventType.RECOMMENDATION_REJECTED, null, null,
+                    "reason=reply failed validation error=" + e.getClass().getSimpleName(), correlationId);
+            reply = new CaseAssistantReply(FALLBACK_REPLY, List.of(), ProcessorMode.RULES);
+        }
+        CaseMessageEntity answer = messages.save(CaseMessageEntity.assistantReply(question, reply.content(),
+                reply.evidenceIds(), reply.processorMode(), AuditTrail.SYSTEM_ACTOR, clock.instant()));
+        audit.record(caseId, AuditEventType.MESSAGE_RECEIVED, ActorType.ANALYST, actorId, null, null,
+                "messageId=%s replyId=%s length=%d citedEvidence=%d mode=%s fallback=%s".formatted(question.getId(),
+                        answer.getId(), message.length(), reply.evidenceIds().size(), reply.processorMode(),
+                        fallbackUsed), correlationId);
+        return new CaseMessageExchange(question.toDomain(), answer.toDomain(), fallbackUsed);
     }
 
     private List<CollectedEvidence> collectEvidence(FraudCaseEntity fraudCase, TransactionClaim claim,

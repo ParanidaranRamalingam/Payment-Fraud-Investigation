@@ -18,7 +18,8 @@ class SchemaMigrationMySqlTest {
 
     private static final List<String> DOMAIN_TABLES = List.of("fraud_case", "transaction_claim", "tool_trace",
             "evidence_item", "recommendation", "recommendation_evidence", "recommendation_missing_info",
-            "recommendation_trace_ref", "policy_citation", "review_disposition", "audit_event");
+            "recommendation_trace_ref", "policy_citation", "review_disposition", "audit_event", "case_message",
+            "case_message_evidence");
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -28,7 +29,7 @@ class SchemaMigrationMySqlTest {
         List<Map<String, Object>> history = jdbc.queryForList(
                 "SELECT version, success FROM flyway_schema_history WHERE version IS NOT NULL ORDER BY installed_rank");
 
-        assertThat(history).extracting(r -> r.get("version")).containsExactly("1", "2");
+        assertThat(history).extracting(r -> r.get("version")).containsExactly("1", "2", "3");
         assertThat(history).allSatisfy(r -> assertThat(r.get("success")).isEqualTo(Boolean.TRUE));
     }
 
@@ -133,7 +134,11 @@ class SchemaMigrationMySqlTest {
                 "policy_citation.recommendation_id->recommendation",
                 "review_disposition.case_id->fraud_case",
                 "review_disposition.recommendation_id->recommendation",
-                "audit_event.case_id->fraud_case");
+                "audit_event.case_id->fraud_case",
+                "case_message.case_id->fraud_case",
+                "case_message.reply_to_id->case_message",
+                "case_message_evidence.message_id->case_message",
+                "case_message_evidence.evidence_item_id->evidence_item");
     }
 
     @Test
@@ -174,5 +179,26 @@ class SchemaMigrationMySqlTest {
                 INSERT INTO review_disposition VALUES
                 ('r1','c5',NULL,'analyst-1','OVERRIDE',NULL,NULL,'Long enough rationale',NOW(6))"""))
                 .isInstanceOf(DataAccessException.class).hasMessageContaining("ck_review_disposition_override");
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "INSERT INTO case_message VALUES ('m1','c6','ASSISTANT','system','reply',NULL,'RULES',NOW(6))|ck_case_message_reply_to",
+            "INSERT INTO case_message VALUES ('m2','c6','ANALYST','analyst-1','question',NULL,'RULES',NOW(6))|ck_case_message_processor",
+            "INSERT INTO case_message VALUES ('m3','c6','SYSTEM','analyst-1','question',NULL,NULL,NOW(6))|ck_case_message_role",
+            "INSERT INTO case_message VALUES ('m4','c6','ANALYST','analyst-1','   ',NULL,NULL,NOW(6))|ck_case_message_content"})
+    void v3_caseMessageChecks_enforcedByDatabase(String sql, String constraint) {
+        jdbc.update("INSERT INTO fraud_case VALUES ('c6','NEW','cus_abcdef',NULL,'s','a',TRUE,TRUE,NOW(6),NOW(6),0)");
+
+        assertThatThrownBy(() -> jdbc.update(sql)).isInstanceOf(DataAccessException.class).hasMessageContaining(constraint);
+    }
+
+    @Test
+    void v3_caseMessageIndex_exists() {
+        List<String> indexes = jdbc.queryForList("""
+                SELECT DISTINCT index_name FROM information_schema.statistics WHERE table_schema = DATABASE()""",
+                String.class);
+
+        assertThat(indexes).contains("ix_case_message_case_created", "uq_case_message_evidence");
     }
 }

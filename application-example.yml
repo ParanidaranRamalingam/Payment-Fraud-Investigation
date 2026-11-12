@@ -4,6 +4,14 @@
 #   export DB_USERNAME='fraud_app'
 #   export DB_PASSWORD='<supplied-by-operator>'
 #
+# Analyst accounts (HTTP Basic, bcrypt hashes only - never plain text). Roles: ANALYST, REVIEWER.
+#   export FRAUD_SECURITY_ACCOUNTS_0_USERNAME='analyst1'
+#   export FRAUD_SECURITY_ACCOUNTS_0_PASSWORD='{bcrypt}$2b$10$<hash>'
+#   export FRAUD_SECURITY_ACCOUNTS_0_ROLES='ANALYST'
+#   export FRAUD_SECURITY_ACCOUNTS_1_USERNAME='reviewer1'
+#   export FRAUD_SECURITY_ACCOUNTS_1_PASSWORD='{bcrypt}$2b$10$<hash>'
+#   export FRAUD_SECURITY_ACCOUNTS_1_ROLES='REVIEWER'
+#
 # Optional:
 #   DB_POOL_SIZE        (default 10)
 #   SERVER_PORT         (default 8080)
@@ -20,3 +28,6 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+
+# Analyst accounts bind from FRAUD_SECURITY_ACCOUNTS_<n>_USERNAME/_PASSWORD/_ROLES via relaxed binding.
+# No fraud.security.accounts entry is needed here; with none configured every API call is refused (fail closed).

@@ -1,5 +1,6 @@
 package com.capstone.fraudcase.agent.common;
 
+import com.capstone.fraudcase.domain.CaseMessage;
 import com.capstone.fraudcase.domain.FraudCaseRecommendation;
 import com.capstone.fraudcase.domain.InvalidRecommendationException;
 import com.capstone.fraudcase.domain.SensitiveDataGuard;
@@ -54,5 +55,25 @@ public class RecommendationValidator {
             }
         }
         return recommendation;
+    }
+
+    /**
+     * Same boundary check for case-assistant replies: non-blank, bounded, safe text that cites only this case's
+     * evidence, each at most once, and states which processor produced it.
+     */
+    public CaseAssistantReply validateReply(CaseAssistantReply reply, CaseMessageContext context) {
+        if (reply == null || reply.processorMode() == null) {
+            throw new InvalidRecommendationException("reply and its processor mode are required");
+        }
+        String content = reply.content();
+        if (content == null || content.isBlank() || content.length() > CaseMessage.MAX_REPLY_CONTENT_LENGTH
+                || !SensitiveDataGuard.isSafeFreeText(content)) {
+            throw new InvalidRecommendationException("reply content is missing, too long or unsafe");
+        }
+        if (!context.evidenceIds().containsAll(reply.evidenceIds())
+                || reply.evidenceIds().stream().distinct().count() != reply.evidenceIds().size()) {
+            throw new InvalidRecommendationException("reply cites evidence outside this case or more than once");
+        }
+        return reply;
     }
 }
