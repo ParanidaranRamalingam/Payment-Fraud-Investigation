@@ -110,6 +110,13 @@ public class SharedSteps {
         context.put(key, createCase(txnRef, claimType));
     }
 
+    /** Combined fixture: creates a case through the UI and runs its investigation. */
+    @Given("an investigated case exists for scenario {string} with claim type {string}")
+    public void investigatedCaseExists(String txnRef, String claimType) {
+        caseExists(txnRef, claimType);
+        caseInvestigated();
+    }
+
     @Given("the case has been investigated")
     public void caseInvestigated() {
         new InvestigationPage(context).open(context.caseId()).runInvestigation();

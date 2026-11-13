@@ -13,9 +13,12 @@ Selenium WebDriver, Cucumber BDD feature files and the Page Object Model.
   corpus is kept so citation scenarios are meaningful.
 - Selenium Manager resolves chromedriver for the installed Chrome automatically
   (first run needs network; override offline with `-Dwebdriver.chrome.driver=`).
-- Screenshots of failed scenarios land in `target/e2e-screenshots/` and are embedded
-  in the Extent report at `target/extent-report/ExtentReport.html`; a plain Cucumber
-  report lands in `target/cucumber-report.html`.
+- A screenshot is captured after **every step** (synced via the `AfterStep` hook and
+  the `StepTracker` event listener): embedded in the Extent report under each step
+  node and saved to `target/e2e-screenshots/<scenario>/NN-<step-text>.png`. Failures
+  get an extra final-state capture. The Extent report lands in
+  `target/extent-report <timestamp>/target/extent-report/ExtentReport.html`; a plain
+  Cucumber report lands in `target/cucumber-report.html`.
 
 ## Prerequisites
 

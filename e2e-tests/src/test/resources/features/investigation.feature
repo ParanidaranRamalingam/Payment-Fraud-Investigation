@@ -12,8 +12,7 @@ Feature: Investigation workspace and tool execution
     Then the customer claim should show provenance
 
   Scenario: Investigation cannot be re-run after completion
-    Given a case exists for scenario "txn_fraud_e2e3" with claim type "UNRECOGNISED_TRANSACTION"
-    And the case has been investigated
+    Given an investigated case exists for scenario "txn_fraud_e2e3" with claim type "UNRECOGNISED_TRANSACTION"
     Then the run-investigation action should not be available
 
   Scenario: Tool timeouts surface as structured unavailable evidence

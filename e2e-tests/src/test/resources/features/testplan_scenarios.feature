@@ -3,51 +3,44 @@ Feature: TEST_PLAN required scenarios (T01-T12) via the UI
 
   @t01
   Scenario: T01 - fraud indicators produce a high-risk advisory routed for review
-    Given a case exists for scenario "txn_fraud_t01" with claim type "UNRECOGNISED_TRANSACTION"
-    And the case has been investigated
+    Given an investigated case exists for scenario "txn_fraud_t01" with claim type "UNRECOGNISED_TRANSACTION"
     When I open the recommendation page
     Then the advisory assessment should be displayed
     And human review should be marked required
 
   @t02
   Scenario: T02 - merchant issue claim routes to a merchant-dispute outcome
-    Given a case exists for scenario "txn_dispute_t02" with claim type "MERCHANT_ISSUE"
-    And the case has been investigated
+    Given an investigated case exists for scenario "txn_dispute_t02" with claim type "MERCHANT_ISSUE"
     When I open the recommendation page
     Then the advisory assessment should be displayed
     And human review should be marked required
 
   @t03
   Scenario: T03 - duplicate charge scenario produces an advisory assessment
-    Given a case exists for scenario "txn_dup_t03" with claim type "DUPLICATE_CHARGE"
-    And the case has been investigated
+    Given an investigated case exists for scenario "txn_dup_t03" with claim type "DUPLICATE_CHARGE"
     When I open the recommendation page
     Then the advisory assessment should be displayed
 
   @t04
   Scenario: T04 - missing transaction data leaves visible gaps
-    Given a case exists for scenario "txn_missing_t04" with claim type "UNRECOGNISED_TRANSACTION"
-    And the case has been investigated
+    Given an investigated case exists for scenario "txn_missing_t04" with claim type "UNRECOGNISED_TRANSACTION"
     Then the gaps panel should list unresolved information
 
   @t05
   Scenario: T05 - no matching policy produces an abstention state
-    Given a case exists for scenario "txn_missing_t05" with claim type "OTHER"
-    And the case has been investigated
+    Given an investigated case exists for scenario "txn_missing_t05" with claim type "OTHER"
     When I open the policy citations page
     Then the abstention or empty state should be shown
 
   @t06
   Scenario: T06 - contradictory signals are surfaced on the recommendation
-    Given a case exists for scenario "txn_conflict_t06" with claim type "UNRECOGNISED_TRANSACTION"
-    And the case has been investigated
+    Given an investigated case exists for scenario "txn_conflict_t06" with claim type "UNRECOGNISED_TRANSACTION"
     When I open the recommendation page
     Then the recommendation should list missing or contradictory information
 
   @t07
   Scenario: T07 - without a model the rules processor still produces an assessment
-    Given a case exists for scenario "txn_fraud_t07" with claim type "UNRECOGNISED_TRANSACTION"
-    And the case has been investigated
+    Given an investigated case exists for scenario "txn_fraud_t07" with claim type "UNRECOGNISED_TRANSACTION"
     When I open the recommendation page
     Then the advisory assessment should be displayed
     And human review should be marked required
@@ -62,8 +55,7 @@ Feature: TEST_PLAN required scenarios (T01-T12) via the UI
 
   @t09
   Scenario: T09 - invalid review input is rejected rather than recorded
-    Given a case exists for scenario "txn_fraud_t09" with claim type "UNRECOGNISED_TRANSACTION"
-    And the case has been investigated
+    Given an investigated case exists for scenario "txn_fraud_t09" with claim type "UNRECOGNISED_TRANSACTION"
     And I am signed in as a reviewer
     When I open the review page
     And I choose decision "OVERRIDE"
@@ -91,8 +83,7 @@ Feature: TEST_PLAN required scenarios (T01-T12) via the UI
 
   @t12
   Scenario: T12 - override without required fields cannot be submitted
-    Given a case exists for scenario "txn_fraud_t12" with claim type "UNRECOGNISED_TRANSACTION"
-    And the case has been investigated
+    Given an investigated case exists for scenario "txn_fraud_t12" with claim type "UNRECOGNISED_TRANSACTION"
     And I am signed in as a reviewer
     When I open the review page
     And I choose decision "OVERRIDE"

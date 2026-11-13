@@ -15,6 +15,7 @@ import static io.cucumber.junit.platform.engine.Constants.PLUGIN_PROPERTY_NAME;
         value = "com.capstone.fraudcase.e2e.steps,com.capstone.fraudcase.e2e.hooks")
 @ConfigurationParameter(key = PLUGIN_PROPERTY_NAME,
         value = "pretty, html:target/cucumber-report.html, json:target/cucumber.json,"
+                + " com.capstone.fraudcase.e2e.hooks.StepTracker,"
                 + " com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:")
 public class RunCucumberIT {
 }

@@ -2,8 +2,7 @@
 Feature: Case-scoped assistant conversation
 
   Scenario: Analyst asks about the case and gets a grounded reply
-    Given a case exists for scenario "txn_fraud_e2eb" with claim type "UNRECOGNISED_TRANSACTION"
-    And the case has been investigated
+    Given an investigated case exists for scenario "txn_fraud_e2eb" with claim type "UNRECOGNISED_TRANSACTION"
     When I ask the assistant "What is the recommendation for this case?"
     Then the conversation should show my message and an assistant reply
 
@@ -16,8 +15,7 @@ Feature: Case-scoped assistant conversation
     And the reply should not contain "txn_fraud_e2ec"
 
   Scenario: Terminal cases have a read-only conversation
-    Given a case exists for scenario "txn_genuine_e2e6" with claim type "OTHER"
-    And the case has been investigated
+    Given an investigated case exists for scenario "txn_genuine_e2e6" with claim type "OTHER"
     And I am signed in as a reviewer
     When I open the review page
     And I choose decision "CLOSE"

@@ -4,11 +4,13 @@ import com.capstone.fraudcase.e2e.config.AppLauncher;
 import com.capstone.fraudcase.e2e.config.TestContext;
 import io.cucumber.java.After;
 import io.cucumber.java.AfterAll;
+import io.cucumber.java.AfterStep;
 import io.cucumber.java.Before;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.Scenario;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,6 +31,7 @@ public class Hooks {
             "transaction_claim", "audit_event", "fraud_case");
 
     private final TestContext context;
+    private int stepIndex;
 
     public Hooks(TestContext context) {
         this.context = context;
@@ -42,6 +45,11 @@ public class Hooks {
     @AfterAll
     public static void stopApp() {
         AppLauncher.stop();
+    }
+
+    @Before
+    public void resetStepIndex() {
+        stepIndex = 0;
     }
 
     @Before
@@ -59,6 +67,24 @@ public class Hooks {
         }
     }
 
+    /** Captures a screenshot after every step, named after the step that just ran. */
+    @AfterStep
+    public void captureStep(Scenario scenario) {
+        WebDriver driver = context.driver();
+        if (driver == null || !(driver instanceof TakesScreenshot ts)) {
+            return;
+        }
+        try {
+            byte[] png = ts.getScreenshotAs(OutputType.BYTES);
+            String stepText = StepTracker.currentStep();
+            scenario.attach(png, "image/png", stepText);
+            Path dir = Path.of("target", "e2e-screenshots", slug(scenario.getName()));
+            Files.createDirectories(dir);
+            Files.write(dir.resolve(String.format("%02d-%s.png", ++stepIndex, slug(stepText))), png);
+        } catch (Exception ignored) {
+        }
+    }
+
     @After
     public void tearDown(Scenario scenario) {
         if (context.driver() == null) {
@@ -66,16 +92,17 @@ public class Hooks {
         }
         try {
             if (scenario.isFailed() && context.driver() instanceof TakesScreenshot ts) {
-                byte[] png = ts.getScreenshotAs(OutputType.BYTES);
-                scenario.attach(png, "image/png", scenario.getName());
-                Path dir = Path.of("target", "e2e-screenshots");
-                Files.createDirectories(dir);
-                Files.write(dir.resolve(scenario.getName().replaceAll("[^A-Za-z0-9_-]", "_") + ".png"), png);
+                scenario.attach(ts.getScreenshotAs(OutputType.BYTES), "image/png", "FAILURE: " + scenario.getName());
             }
-        } catch (IOException ignored) {
+        } catch (Exception ignored) {
         } finally {
             context.driver().quit();
         }
+    }
+
+    private static String slug(String text) {
+        String s = text.replaceAll("[^A-Za-z0-9_-]", "_").replaceAll("_+", "_");
+        return s.length() > 60 ? s.substring(0, 60) : s;
     }
 
     private static String env(String key, String fallback) {
