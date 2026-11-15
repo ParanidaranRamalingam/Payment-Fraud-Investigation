@@ -42,7 +42,7 @@
                             <span class="field__error" th:errors="*{customerReference}"></span>
                         </div>
                         <div class="field" th:classappend="${#fields.hasErrors('cardReference')} ? 'field--error'">
-                            <label for="cardReference">Card reference <span class="text-muted">(optional)</span></label>
+                            <label for="cardReference">Card reference</label>
                             <input type="text" id="cardReference" th:field="*{cardReference}"
                                    placeholder="****1234" autocomplete="off">
                             <span class="hint">Masked PAN — last four digits only, e.g. <code>****1234</code>.</span>
@@ -67,7 +67,7 @@
                         </div>
                         <div class="grid grid--2">
                             <div class="field" th:classappend="${#fields.hasErrors('merchantCategoryCode')} ? 'field--error'">
-                                <label for="merchantCategoryCode">MCC <span class="text-muted">(optional)</span></label>
+                                <label for="merchantCategoryCode">MCC</label>
                                 <input type="text" id="merchantCategoryCode" th:field="*{merchantCategoryCode}"
                                        placeholder="5411" inputmode="numeric" autocomplete="off">
                                 <span class="field__error" th:errors="*{merchantCategoryCode}"></span>
